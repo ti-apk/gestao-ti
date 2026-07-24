@@ -137,7 +137,7 @@ export function mapClickUpTaskToTicket(task) {
   // Categoria -> primeira Etiqueta (tag) da task; sem etiqueta, usa o nome da lista
   const category = task.tags?.[0]?.name
     ? task.tags[0].name.charAt(0).toUpperCase() + task.tags[0].name.slice(1)
-    : task.list?.name || 'Sem etiqueta'
+    : 'Sem etiqueta'
 
   // Esforço -> "Estimativa de Tempo" (time_estimate, em ms); sem estimativa,
   // usa "Rastrear Tempo" (time_spent); sem nenhum dos dois, hash determinístico
