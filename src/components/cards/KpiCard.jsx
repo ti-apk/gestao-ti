@@ -2,6 +2,7 @@ const COLOR_MAP = {
   blue: 'text-brand-blue',
   green: 'text-brand-green',
   amber: 'text-brand-amber',
+  orange: 'text-brand-orange',
   red: 'text-brand-red',
   gray: 'text-gray-700 dark:text-gray-200',
 }

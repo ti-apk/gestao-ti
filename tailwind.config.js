@@ -23,7 +23,8 @@ export default {
           blue: '#2E7DF7',
           green: '#1FA37C',
           amber: '#F5A623',
-          red: '#E8483C',
+          orange: '#ff6918',
+          red: '#ff4639',
         },
       },
       borderRadius: {
