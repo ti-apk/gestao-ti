@@ -5,7 +5,7 @@ import {
   getFinalizedDensityCalendar,
   getFinalizedDensityAggregate,
   getDemandByArea,
-  getEfficiencyQuadrant,
+  getEfficiencyByPriority,
   getSlaByResponsible,
   filterTickets,
 } from '../utils/metrics'
@@ -33,7 +33,7 @@ export function getDashboardData(allTickets, filters) {
     evolution: getTicketsEvolution(tickets, filters),
     density,
     demand: getDemandByArea(tickets),
-    quadrant: getEfficiencyQuadrant(tickets),
+    efficiency: getEfficiencyByPriority(tickets),
     sla: getSlaByResponsible(tickets),
   }
 }

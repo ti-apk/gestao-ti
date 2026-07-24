@@ -193,28 +193,40 @@ export function getDemandByArea(tickets) {
 }
 
 // -----------------------------------------------------------------------------
-// 5. QUADRANTE DE EFICIÊNCIA (Scatter: esforço x tempo de ciclo)
+// 5. EFICIÊNCIA POR PRIORIDADE (tabela com semáforo de esforço)
 // -----------------------------------------------------------------------------
-export function getEfficiencyQuadrant(tickets, { effortMid = 10, cycleMid = 20 } = {}) {
-  return tickets
-    .filter((t) => t.closedAt)
-    .slice(0, 12)
-    .map((t) => {
-      const cycleTimeDisplay = t.cycleTimeHours / 3
-      const fast = t.effortScore <= effortMid
-      const slow = cycleTimeDisplay > cycleMid
-      let quadrant = 'rapido_baixo_esforco'
-      if (fast && slow) quadrant = 'esforco_x_ciclo'
-      else if (!fast && slow) quadrant = 'lento_alto_esforco'
-      else if (!fast && !slow) quadrant = 'lento_baixo_esforco'
+const PRIORITY_ORDER = ['urgente', 'alta', 'normal', 'baixa']
+const PRIORITY_LABEL = { urgente: 'Urgente', alta: 'Alta', normal: 'Normal', baixa: 'Baixa' }
 
-      return {
-        id: t.id,
-        effort: t.effortScore,
-        cycleTime: Number(cycleTimeDisplay.toFixed(1)),
-        quadrant,
-      }
-    })
+// Limiares de esforço na escala 0-20 usada em effortScore
+function effortLevel(avgEffort) {
+  if (avgEffort <= 7) return { level: 'baixo', color: 'green' }
+  if (avgEffort <= 13) return { level: 'médio', color: 'amber' }
+  return { level: 'alto', color: 'red' }
+}
+
+export function getEfficiencyByPriority(tickets) {
+  const closed = tickets.filter((t) => t.closedAt)
+
+  const groups = PRIORITY_ORDER.map((priority) => {
+    const items = closed.filter((t) => t.priority === priority)
+    if (items.length === 0) return null
+
+    const avgEffort = items.reduce((sum, t) => sum + t.effortScore, 0) / items.length
+    const avgCycleTimeDays = items.reduce((sum, t) => sum + t.cycleTimeHours, 0) / items.length / 24
+    const { level, color } = effortLevel(avgEffort)
+
+    return {
+      priority,
+      label: PRIORITY_LABEL[priority],
+      count: items.length,
+      avgCycleTimeDays: Number(avgCycleTimeDays.toFixed(1)),
+      effortLevel: level,
+      effortColor: color,
+    }
+  })
+
+  return groups.filter(Boolean)
 }
 
 // -----------------------------------------------------------------------------

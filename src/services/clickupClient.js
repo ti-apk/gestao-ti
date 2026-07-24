@@ -90,13 +90,20 @@ function mapPriority(clickUpPriority) {
       return 'urgente'
     case 'high':
       return 'alta'
+    case 'low':
+      return 'baixa'
     default:
-      return 'normal' // cobre "normal" e "low"
+      return 'normal'
   }
 }
 
 // Prazo padrão quando a task não tem "Data de Vencimento" preenchida
-const DEFAULT_SLA_HOURS = { urgente: 8, alta: 24, normal: 72 }
+const DEFAULT_SLA_HOURS = {
+  urgente: 48,
+  alta: 72,
+  normal: 120,
+  baixa: 192 
+}
 
 // Hash simples e determinístico, usado só como último fallback (mesma task -> mesmo valor)
 function hashToRange(str, min, max) {

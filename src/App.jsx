@@ -6,7 +6,7 @@ import { KpiCard } from './components/cards/KpiCard'
 import { TicketsEvolutionChart } from './components/charts/TicketsEvolutionChart'
 import { OpeningDensityHeatmap } from './components/charts/OpeningDensityHeatmap'
 import { DemandByAreaChart } from './components/charts/DemandByAreaChart'
-import { EfficiencyQuadrantChart } from './components/charts/EfficiencyQuadrantChart'
+import { EfficiencyByPriorityTable } from './components/charts/EfficiencyByPriorityTable'
 import { SlaByResponsibleChart } from './components/charts/SlaByResponsibleChart'
 import { getTickets, getDashboardData } from './services/ticketService'
 import { DEFAULT_FILTERS } from './components/layout/FiltersPanel'
@@ -54,7 +54,7 @@ export default function App() {
     )
   }
 
-  const { kpis, evolution, density, demand, quadrant, sla } = data
+  const { kpis, evolution, density, demand, efficiency, sla } = data
 
   return (
     <Layout filters={filters} onFiltersChange={setFilters} assignees={assignees} categories={categories}>
@@ -77,7 +77,7 @@ export default function App() {
       {/* Linha 3 — Demanda + Quadrante + SLA */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <DemandByAreaChart data={demand} />
-        <EfficiencyQuadrantChart data={quadrant} />
+        <EfficiencyByPriorityTable data={efficiency} />
         <SlaByResponsibleChart data={sla} />
       </div>
     </Layout>
