@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-surface-light text-gray-900 transition-colors duration-200;
+    @apply dark:bg-surface-dark dark:text-gray-100;
+  }
+}
+
+@layer components {
+  /* Classe reutilizada em todos os 6 KPI cards e nos painéis de gráfico */
+  .panel {
+    @apply bg-surface-card dark:bg-surface-dark-card;
+    @apply border border-border-light dark:border-border-dark;
+    @apply rounded-2xl shadow-sm;
+  }
+
+  /* Moldura que envolve sidebar + conteúdo, dando a sensação de "área separada"
+     do cabeçalho (título + logo), igual ao mockup */
+  .app-frame {
+    @apply bg-surface-light dark:bg-surface-dark;
+    @apply border border-border-light dark:border-border-dark;
+    @apply rounded-2xl;
+  }
+}
