@@ -30,7 +30,7 @@ export function getDashboardData(allTickets, filters) {
 
   return {
     kpis: getKpiSummary(tickets),
-    evolution: getTicketsEvolution(tickets),
+    evolution: getTicketsEvolution(tickets, filters),
     density,
     demand: getDemandByArea(tickets),
     quadrant: getEfficiencyQuadrant(tickets),

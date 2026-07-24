@@ -1,5 +1,6 @@
 import {
   MONTH_LABELS,
+  WEEKDAY_LABELS,
   hoursBetween,
   daysBetween,
   isOverdue,
@@ -9,7 +10,7 @@ import {
   bucketLabelFor,
   bucketSortKeyFor,
 } from './dateHelpers'
-import { isWithinInterval, isSameDay } from 'date-fns'
+import { isWithinInterval, isSameDay, startOfDay, subDays, addDays, differenceInCalendarDays } from 'date-fns'
 
 // -----------------------------------------------------------------------------
 // FILTRO — aplica período (sidebar), responsável e categoria sobre a lista bruta
@@ -67,9 +68,58 @@ export function getKpiSummary(tickets) {
 }
 
 // -----------------------------------------------------------------------------
-// 2. EVOLUÇÃO DE TICKETS (LineChart: criados x finalizados por mês)
+// 2. EVOLUÇÃO DE TICKETS (LineChart: criados x finalizados)
 // -----------------------------------------------------------------------------
-export function getTicketsEvolution(tickets) {
+// A granularidade do eixo X muda de acordo com o período selecionado no painel
+// de Filtros:
+//   - "Esta semana"                -> 1 ponto por dia (hoje-6 até hoje, 7 dias)
+//   - "Este mês" / "Últimos 30 dias" -> 1 ponto por semana
+//   - "Todos" / "Personalizado"    -> 1 ponto por mês (comportamento original)
+export function getTicketsEvolution(tickets, filters = {}) {
+  const period = filters.period || 'all'
+
+  if (period === 'this_week') return getDailyEvolution(tickets)
+  if (period === 'this_month' || period === 'last_30_days') return getWeeklyEvolution(tickets, filters)
+  return getMonthlyEvolution(tickets)
+}
+
+// Últimos 7 dias fechados em hoje (hoje - 6 dias .. hoje)
+function getDailyEvolution(tickets) {
+  const today = startOfDay(new Date())
+  const start = subDays(today, 6)
+
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i)).map((day) => {
+    const criados = tickets.filter((t) => isSameDay(new Date(t.createdAt), day)).length
+    const finalizados = tickets.filter((t) => t.closedAt && isSameDay(new Date(t.closedAt), day)).length
+    return { label: WEEKDAY_LABELS[day.getDay()], criados, finalizados }
+  })
+}
+
+// Agrupa por semana, contando a partir do início do período filtrado
+// (início do mês para "Este mês", ou hoje-30 para "Últimos 30 dias")
+function getWeeklyEvolution(tickets, filters) {
+  const { start } = getPeriodRange(filters)
+  const rangeStart = start || startOfDay(new Date())
+
+  const byWeek = {}
+  const bump = (dateISO, field) => {
+    const date = new Date(dateISO)
+    const weekIndex = Math.floor(differenceInCalendarDays(date, rangeStart) / 7)
+    if (weekIndex < 0) return
+    if (!byWeek[weekIndex]) {
+      byWeek[weekIndex] = { key: weekIndex, label: `Sem ${weekIndex + 1}`, criados: 0, finalizados: 0 }
+    }
+    byWeek[weekIndex][field]++
+  }
+
+  tickets.forEach((t) => bump(t.createdAt, 'criados'))
+  tickets.forEach((t) => t.closedAt && bump(t.closedAt, 'finalizados'))
+
+  return Object.values(byWeek).sort((a, b) => a.key - b.key)
+}
+
+// Comportamento original: 1 ponto por mês
+function getMonthlyEvolution(tickets) {
   const months = [...new Set(tickets.map((t) => new Date(t.createdAt).getMonth()))].sort(
     (a, b) => a - b
   )
@@ -79,7 +129,7 @@ export function getTicketsEvolution(tickets) {
     const finalizados = tickets.filter(
       (t) => t.closedAt && new Date(t.closedAt).getMonth() === monthIndex
     ).length
-    return { month: MONTH_LABELS[monthIndex], criados, finalizados }
+    return { label: MONTH_LABELS[monthIndex], criados, finalizados }
   })
 }
 

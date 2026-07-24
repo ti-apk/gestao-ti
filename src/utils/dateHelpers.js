@@ -87,11 +87,14 @@ export function yearBucketLabel(date) {
   return `${date.getFullYear()}`
 }
 
-// Decide a granularidade ideal com base em quantos meses os dados cobrem
+// Decide a granularidade ideal com base em quantos meses os dados cobrem.
+// Regra: até 8 meses -> mês; acima disso, muda para trimestre; se isso
+// resultar em mais de 6 trimestres (>18 meses), muda para semestre; se
+// isso resultar em mais de 6 semestres (>36 meses), muda para ano.
 export function pickGranularity(monthsSpan) {
-  if (monthsSpan <= 3) return 'month'
-  if (monthsSpan <= 12) return 'quarter'
-  if (monthsSpan <= 36) return 'semester'
+  if (monthsSpan <= 8) return 'month'
+  if (monthsSpan <= 18) return 'quarter' // até 6 trimestres
+  if (monthsSpan <= 36) return 'semester' // até 6 semestres
   return 'year'
 }
 

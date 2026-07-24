@@ -98,7 +98,7 @@ export function FiltersPanel({ filters, onChange, assignees = [], categories = [
 }
 
 export const DEFAULT_FILTERS = {
-  period: 'all',
+  period: 'last_30_days',
   startDate: '',
   endDate: '',
   assignee: 'all',

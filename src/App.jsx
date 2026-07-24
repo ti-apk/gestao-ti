@@ -65,7 +65,7 @@ export default function App() {
         <KpiCard icon={ShieldCheck} label="Taxa de SLA" value={`${kpis.slaRate}%`} sublabel="dentro da previsão" color="amber" />
         <KpiCard icon={AlertTriangle} label="Urgente(s)" value={kpis.urgentCount} sublabel="impacta(m) operação" color="red" />
         <KpiCard icon={Target} label="Tempo Médio" value={kpis.avgTime} sublabel="média por ticket" color="gray" />
-        <KpiCard icon={TimerOff} label="Fora do prazo" value={kpis.overdueCount} sublabel="atrasados" color="red" />
+        <KpiCard icon={TimerOff} label="Fora do prazo" value={kpis.overdueCount} sublabel="atrasados" color="amber" />
       </div>
 
       {/* Linha 2 — Evolução + Heatmap (preenchem o espaço disponível) */}
