@@ -18,7 +18,7 @@ export function TicketsEvolutionChart({ data }) {
       </p>
 
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
+        <LineChart data={data} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-gray-200 dark:stroke-gray-700" />
           <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={32} />

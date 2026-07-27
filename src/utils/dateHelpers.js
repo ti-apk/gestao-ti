@@ -2,7 +2,6 @@ import {
   differenceInHours,
   differenceInCalendarDays,
   format,
-  isAfter,
   startOfMonth,
   endOfMonth,
   startOfWeek,
@@ -29,11 +28,6 @@ export function hoursBetween(startISO, endISO) {
 
 export function daysBetween(startISO, endISO) {
   return differenceInCalendarDays(new Date(endISO), new Date(startISO))
-}
-
-export function isOverdue(ticket) {
-  const reference = ticket.closedAt ? new Date(ticket.closedAt) : new Date()
-  return isAfter(reference, new Date(ticket.slaDeadline))
 }
 
 export function formatDatePt(date) {

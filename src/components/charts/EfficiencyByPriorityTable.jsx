@@ -1,5 +1,3 @@
-import { Badge } from "../ui/Badge";
-
 export function EfficiencyByPriorityTable({ data }) {
   return (
     <div className="panel flex h-full min-h-0 flex-1 flex-col p-4">
@@ -7,7 +5,8 @@ export function EfficiencyByPriorityTable({ data }) {
         Eficiência por Prioridade
       </h3>
       <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-        Tempo de ciclo médio e nível de esforço por prioridade
+        Tempo de ciclo médio por prioridade — histórico completo, não segue o
+        filtro de período
       </p>
 
       <div className="flex-1 overflow-hidden rounded-lg border border-border-light dark:border-border-dark">
@@ -17,7 +16,6 @@ export function EfficiencyByPriorityTable({ data }) {
               <th className="px-3 py-2 font-medium">Prioridade</th>
               <th className="px-3 py-2 font-medium">Tickets</th>
               <th className="px-3 py-2 font-medium">Tempo de ciclo</th>
-              <th className="px-3 py-2 font-medium">Esforço</th>
             </tr>
           </thead>
           <tbody>
@@ -34,9 +32,6 @@ export function EfficiencyByPriorityTable({ data }) {
                 </td>
                 <td className="px-3 py-2.5 text-gray-700 dark:text-gray-200">
                   {row.avgCycleTimeDays}d
-                </td>
-                <td className="px-3 py-2.5">
-                  <Badge color={row.effortColor}>{row.effortLevel}</Badge>
                 </td>
               </tr>
             ))}

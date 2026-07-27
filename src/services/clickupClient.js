@@ -64,23 +64,26 @@ function normalize(str) {
     .trim()
 }
 
-// Mapa exato dos status configurados na lista do usuário
+// Mapa exato dos status configurados na lista do usuário.
+// Mais granular que antes: "bloqueado" (aguardando) e "cancelado" agora são
+// distintos de "em_andamento" e "concluido", porque os indicadores precisam
+// tratá-los de forma diferente (ver metrics.js).
 const STATUS_MAP = {
-  backlog: 'aberto',
-  pendente: 'aberto',
+  backlog: 'backlog',
+  pendente: 'pendente',
   'em execucao': 'em_andamento',
-  'aguardando interno': 'em_andamento',
-  'aguardando externo': 'em_andamento',
-  cancelado: 'finalizado',
-  concluido: 'finalizado',
+  'aguardando interno': 'bloqueado',
+  'aguardando externo': 'bloqueado',
+  cancelado: 'cancelado',
+  concluido: 'concluido',
 }
 
 function mapStatus(status) {
   const key = normalize(status?.status)
   if (STATUS_MAP[key]) return STATUS_MAP[key]
   // fallback pelo "type" que o ClickUp classifica automaticamente
-  if (status?.type === 'closed' || status?.type === 'done') return 'finalizado'
-  if (status?.type === 'open') return 'aberto'
+  if (status?.type === 'closed' || status?.type === 'done') return 'concluido'
+  if (status?.type === 'open') return 'pendente'
   return 'em_andamento'
 }
 
@@ -93,23 +96,8 @@ function mapPriority(clickUpPriority) {
     case 'low':
       return 'baixa'
     default:
-      return 'normal'
+      return 'normal' // cobre "normal" e tasks sem prioridade definida
   }
-}
-
-// Prazo padrão quando a task não tem "Data de Vencimento" preenchida
-const DEFAULT_SLA_HOURS = {
-  urgente: 48,
-  alta: 72,
-  normal: 120,
-  baixa: 192 
-}
-
-// Hash simples e determinístico, usado só como último fallback (mesma task -> mesmo valor)
-function hashToRange(str, min, max) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0
-  return min + (hash % (max - min + 1))
 }
 
 export function mapClickUpTaskToTicket(task) {
@@ -123,28 +111,20 @@ export function mapClickUpTaskToTicket(task) {
   // Quando finalizado, o ClickUp normalmente preenche date_closed/date_done.
   // Se o status "Concluído/Cancelado" não estiver configurado como tipo
   // closed/done no espaço do ClickUp, usamos date_updated como aproximação.
-  const closedRaw = task.date_closed || task.date_done || (status === 'finalizado' ? task.date_updated : null)
+  const isFinished = status === 'concluido' || status === 'cancelado'
+  const closedRaw = task.date_closed || task.date_done || (isFinished ? task.date_updated : null)
   const closedAt = closedRaw ? new Date(Number(closedRaw)) : null
-
-  const slaDeadline = task.due_date
-    ? new Date(Number(task.due_date))
-    : new Date(createdAt.getTime() + DEFAULT_SLA_HOURS[priority] * 3600 * 1000)
 
   const cycleTimeHours = closedAt
     ? Math.max(0, Math.round((closedAt.getTime() - createdAt.getTime()) / 3600000))
     : 0
 
-  // Categoria -> primeira Etiqueta (tag) da task; sem etiqueta, usa o nome da lista
+  // Categoria -> primeira Etiqueta (tag) da task; sem etiqueta, usa "Geral"
+  // (antes caía no nome da Lista, o que fazia tickets sem etiqueta aparecerem
+  // com o nome da lista do ClickUp em vez de uma categoria genérica)
   const category = task.tags?.[0]?.name
     ? task.tags[0].name.charAt(0).toUpperCase() + task.tags[0].name.slice(1)
-    : 'Sem etiqueta'
-
-  // Esforço -> "Estimativa de Tempo" (time_estimate, em ms); sem estimativa,
-  // usa "Rastrear Tempo" (time_spent); sem nenhum dos dois, hash determinístico
-  const effortSourceMs = task.time_estimate ?? (task.time_spent > 0 ? task.time_spent : null)
-  const effortScore = effortSourceMs
-    ? Math.max(1, Math.round(effortSourceMs / 3600000)) // ms -> horas
-    : hashToRange(task.id, 1, 19)
+    : 'Sem Etiqueta'
 
   return {
     id: task.id,
@@ -155,8 +135,6 @@ export function mapClickUpTaskToTicket(task) {
     assignee: task.assignees?.[0]?.username || task.assignees?.[0]?.email || 'Não atribuído',
     createdAt: createdAt.toISOString(),
     closedAt: closedAt ? closedAt.toISOString() : null,
-    slaDeadline: slaDeadline.toISOString(),
-    effortScore,
     cycleTimeHours,
   }
 }

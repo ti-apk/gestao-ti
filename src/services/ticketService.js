@@ -7,6 +7,7 @@ import {
   getDemandByArea,
   getEfficiencyByPriority,
   getSlaByResponsible,
+  getSlaTargets,
   filterTickets,
 } from '../utils/metrics'
 
@@ -21,6 +22,11 @@ export async function getTickets() {
 export function getDashboardData(allTickets, filters) {
   const tickets = filterTickets(allTickets, filters)
 
+  // A meta de SLA é calculada sempre sobre o histórico COMPLETO (allTickets),
+  // não sobre o recorte filtrado — senão a meta mudaria toda vez que alguém
+  // trocasse o filtro de período, o que não faz sentido pra uma referência
+  const slaTargets = getSlaTargets(allTickets)
+
   // Período "Todos" -> heatmap vira uma faixa agregada (mês/trimestre/semestre/ano).
   // Qualquer outro período -> calendário do mês atual, dia a dia.
   const density =
@@ -28,12 +34,15 @@ export function getDashboardData(allTickets, filters) {
       ? { mode: 'aggregate', ...getFinalizedDensityAggregate(tickets) }
       : { mode: 'calendar', weeks: getFinalizedDensityCalendar(tickets) }
 
+  const efficiencyTickets = filterTickets(allTickets,  { ...filters, period: 'all' })
+
   return {
-    kpis: getKpiSummary(tickets),
+    kpis: getKpiSummary(tickets, slaTargets),
     evolution: getTicketsEvolution(tickets, filters),
     density,
     demand: getDemandByArea(tickets),
-    efficiency: getEfficiencyByPriority(tickets),
-    sla: getSlaByResponsible(tickets),
+    efficiency: getEfficiencyByPriority(efficiencyTickets),
+    sla: getSlaByResponsible(tickets, slaTargets),
+    slaTargets,
   }
 }

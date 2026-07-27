@@ -3,7 +3,6 @@ import {
   WEEKDAY_LABELS,
   hoursBetween,
   daysBetween,
-  isOverdue,
   getCurrentMonthCalendar,
   getPeriodRange,
   pickGranularity,
@@ -11,6 +10,52 @@ import {
   bucketSortKeyFor,
 } from './dateHelpers'
 import { isWithinInterval, isSameDay, startOfDay, subDays, addDays, differenceInCalendarDays } from 'date-fns'
+
+// -----------------------------------------------------------------------------
+// META DE SLA — calculada a partir do histórico real do time, não de um prazo
+// de vencimento (o time não usa "Data de Vencimento" no ClickUp).
+// -----------------------------------------------------------------------------
+// Para cada prioridade, a meta é o percentil 75 do tempo de ciclo dos tickets
+// já concluídos (cancelados não entram: não representam trabalho resolvido).
+// Com poucos dados ainda, usa um valor padrão conservador até acumular
+// pelo menos MIN_SAMPLES tickets concluídos daquela prioridade.
+const FALLBACK_TARGET_HOURS = { urgente: 8, alta: 24, normal: 72, baixa: 96 }
+const MIN_SAMPLES_FOR_BASELINE = 5
+
+function percentile75(values) {
+  if (values.length === 0) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  const index = Math.min(sorted.length - 1, Math.ceil(0.75 * sorted.length) - 1)
+  return sorted[Math.max(0, index)]
+}
+
+// IMPORTANTE: recebe SEMPRE a lista completa de tickets (não a filtrada pela
+// tela), para a meta não oscilar cada vez que alguém troca o filtro de período
+export function getSlaTargets(allTickets) {
+  const concluded = allTickets.filter((t) => t.status === 'concluido')
+
+  const targets = {}
+  for (const priority of Object.keys(FALLBACK_TARGET_HOURS)) {
+    const cycleTimes = concluded.filter((t) => t.priority === priority).map((t) => t.cycleTimeHours)
+    const p75 = percentile75(cycleTimes)
+    targets[priority] =
+      cycleTimes.length >= MIN_SAMPLES_FOR_BASELINE && p75 != null ? p75 : FALLBACK_TARGET_HOURS[priority]
+  }
+  return targets
+}
+
+// Um ticket "bloqueado" (aguardando interno/externo) não conta como fora do
+// prazo — o time não consegue tratá-lo até a dependência ser resolvida.
+// Cancelados também não contam (não é um atraso, é um ticket abandonado).
+export function isOverdue(ticket, slaTargets) {
+  if (ticket.status === 'bloqueado' || ticket.status === 'cancelado') return false
+
+  const targetHours = slaTargets[ticket.priority]
+  if (targetHours == null) return false
+
+  const elapsedHours = ticket.closedAt ? ticket.cycleTimeHours : hoursBetween(ticket.createdAt, new Date().toISOString())
+  return elapsedHours > targetHours
+}
 
 // -----------------------------------------------------------------------------
 // FILTRO — aplica período (sidebar), responsável e categoria sobre a lista bruta
@@ -33,29 +78,39 @@ export function filterTickets(tickets, filters) {
 // 1. KPI CARDS (Total de Tickets, Lead Time Médio, Taxa de SLA, Urgente(s),
 //    Tempo Médio, Fora do prazo)
 // -----------------------------------------------------------------------------
-export function getKpiSummary(tickets) {
+export function getKpiSummary(tickets, slaTargets) {
+  // Total representa TUDO, independente do status (decisão do time)
   const total = tickets.length
-  const closed = tickets.filter((t) => t.closedAt)
+
+  // Lead Time, Taxa de SLA e Tempo Médio olham só pra quem foi efetivamente
+  // concluído — cancelado não é "resolvido", não deve puxar essas médias
+  const concluded = tickets.filter((t) => t.status === 'concluido')
 
   const avgLeadTimeDays =
-    closed.length === 0
+    concluded.length === 0
       ? 0
-      : closed.reduce((sum, t) => sum + daysBetween(t.createdAt, t.closedAt), 0) / closed.length
+      : concluded.reduce((sum, t) => sum + daysBetween(t.createdAt, t.closedAt), 0) / concluded.length
 
-  const withinSla = closed.filter((t) => !isOverdue(t)).length
-  const slaRate = closed.length === 0 ? 0 : (withinSla / closed.length) * 100
+  const withinSla = concluded.filter((t) => !isOverdue(t, slaTargets)).length
+  const slaRate = concluded.length === 0 ? 0 : (withinSla / concluded.length) * 100
 
-  const urgentCount = tickets.filter((t) => t.priority === 'urgente').length
+  // Urgente(s): impacto atual na operação -> conta tudo que ainda não foi
+  // encerrado, incluindo tickets bloqueados (eles continuam urgentes, só não
+  // contam contra o prazo). Só exclui o que já foi concluído ou cancelado.
+  const urgentCount = tickets.filter(
+    (t) => t.priority === 'urgente' && t.status !== 'concluido' && t.status !== 'cancelado'
+  ).length
 
-  // Tempo MÉDIO dedicado por ticket (não mais a soma total)
   const avgMinutes =
-    closed.length === 0
+    concluded.length === 0
       ? 0
-      : closed.reduce((sum, t) => sum + hoursBetween(t.createdAt, t.closedAt) * 60, 0) / closed.length
+      : concluded.reduce((sum, t) => sum + hoursBetween(t.createdAt, t.closedAt) * 60, 0) / concluded.length
   const avgHours = Math.floor(avgMinutes / 60)
   const avgRemainingMinutes = Math.round(avgMinutes % 60)
 
-  const overdueCount = tickets.filter(isOverdue).length
+  // Fora do prazo: qualquer ticket (aberto ou concluído) que passou da meta —
+  // exceto bloqueado/cancelado, já filtrados dentro de isOverdue()
+  const overdueCount = tickets.filter((t) => isOverdue(t, slaTargets)).length
 
   return {
     totalTickets: total,
@@ -90,7 +145,7 @@ function getDailyEvolution(tickets) {
 
   return Array.from({ length: 7 }, (_, i) => addDays(start, i)).map((day) => {
     const criados = tickets.filter((t) => isSameDay(new Date(t.createdAt), day)).length
-    const finalizados = tickets.filter((t) => t.closedAt && isSameDay(new Date(t.closedAt), day)).length
+    const finalizados = tickets.filter((t) => t.status === 'concluido' && isSameDay(new Date(t.closedAt), day)).length
     return { label: WEEKDAY_LABELS[day.getDay()], criados, finalizados }
   })
 }
@@ -113,7 +168,7 @@ function getWeeklyEvolution(tickets, filters) {
   }
 
   tickets.forEach((t) => bump(t.createdAt, 'criados'))
-  tickets.forEach((t) => t.closedAt && bump(t.closedAt, 'finalizados'))
+  tickets.forEach((t) => t.status === 'concluido' && bump(t.closedAt, 'finalizados'))
 
   return Object.values(byWeek).sort((a, b) => a.key - b.key)
 }
@@ -127,7 +182,7 @@ function getMonthlyEvolution(tickets) {
   return months.map((monthIndex) => {
     const criados = tickets.filter((t) => new Date(t.createdAt).getMonth() === monthIndex).length
     const finalizados = tickets.filter(
-      (t) => t.closedAt && new Date(t.closedAt).getMonth() === monthIndex
+      (t) => t.status === 'concluido' && new Date(t.closedAt).getMonth() === monthIndex
     ).length
     return { label: MONTH_LABELS[monthIndex], criados, finalizados }
   })
@@ -142,7 +197,7 @@ export function getFinalizedDensityCalendar(tickets) {
 
   return weeks.map((week) =>
     week.map((day) => {
-      const count = tickets.filter((t) => t.closedAt && isSameDay(new Date(t.closedAt), day.date)).length
+      const count = tickets.filter((t) => t.status === 'concluido' && isSameDay(new Date(t.closedAt), day.date)).length
       return { ...day, count }
     })
   )
@@ -152,7 +207,7 @@ export function getFinalizedDensityCalendar(tickets) {
 // de um único mês, agrupa os finalizados em mês/trimestre/semestre/ano — a
 // granularidade se ajusta automaticamente ao intervalo de datas dos tickets
 export function getFinalizedDensityAggregate(tickets) {
-  const closedDates = tickets.filter((t) => t.closedAt).map((t) => new Date(t.closedAt))
+  const closedDates = tickets.filter((t) => t.status === 'concluido').map((t) => new Date(t.closedAt))
   if (closedDates.length === 0) return { granularity: 'month', buckets: [] }
 
   const times = closedDates.map((d) => d.getTime())
@@ -177,9 +232,11 @@ export function getFinalizedDensityAggregate(tickets) {
 // -----------------------------------------------------------------------------
 export function getDemandByArea(tickets) {
   const counts = {}
-  tickets.forEach((t) => {
-    counts[t.category] = (counts[t.category] || 0) + 1
-  })
+  tickets
+    .filter((t) => t.status !== 'cancelado')
+    .forEach((t) => {
+      counts[t.category] = (counts[t.category] || 0) + 1
+    })
 
   const sorted = Object.entries(counts)
     .map(([category, count]) => ({ category, count }))
@@ -195,10 +252,14 @@ export function getDemandByArea(tickets) {
 // -----------------------------------------------------------------------------
 // 5. EFICIÊNCIA POR PRIORIDADE (tabela com semáforo de esforço)
 // -----------------------------------------------------------------------------
+// Substitui o antigo "Quadrante de Eficiência" (scatter) por algo mais direto
+// de ler: para cada prioridade, mostra o tempo de ciclo médio (em dias) e um
+// badge colorido indicando o nível médio de esforço.
 const PRIORITY_ORDER = ['urgente', 'alta', 'normal', 'baixa']
 const PRIORITY_LABEL = { urgente: 'Urgente', alta: 'Alta', normal: 'Normal', baixa: 'Baixa' }
 
-// Limiares de esforço na escala 0-20 usada em effortScore
+// Limiares de esforço na escala 0-20h usada em effortScore (só baseada em
+// "Estimativa de Tempo" agora — ver clickupClient.js)
 function effortLevel(avgEffort) {
   if (avgEffort <= 7) return { level: 'baixo', color: 'green' }
   if (avgEffort <= 13) return { level: 'médio', color: 'amber' }
@@ -206,23 +267,19 @@ function effortLevel(avgEffort) {
 }
 
 export function getEfficiencyByPriority(tickets) {
-  const closed = tickets.filter((t) => t.closedAt)
+  const concluded = tickets.filter((t) => t.status === 'concluido')
 
   const groups = PRIORITY_ORDER.map((priority) => {
-    const items = closed.filter((t) => t.priority === priority)
+    const items = concluded.filter((t) => t.priority === priority)
     if (items.length === 0) return null
 
-    const avgEffort = items.reduce((sum, t) => sum + t.effortScore, 0) / items.length
     const avgCycleTimeDays = items.reduce((sum, t) => sum + t.cycleTimeHours, 0) / items.length / 24
-    const { level, color } = effortLevel(avgEffort)
 
     return {
       priority,
       label: PRIORITY_LABEL[priority],
       count: items.length,
       avgCycleTimeDays: Number(avgCycleTimeDays.toFixed(1)),
-      effortLevel: level,
-      effortColor: color,
     }
   })
 
@@ -232,14 +289,14 @@ export function getEfficiencyByPriority(tickets) {
 // -----------------------------------------------------------------------------
 // 6. SLA POR RESPONSÁVEL (barras empilhadas: % dentro x fora do prazo)
 // -----------------------------------------------------------------------------
-export function getSlaByResponsible(tickets) {
+export function getSlaByResponsible(tickets, slaTargets) {
   const byAssignee = {}
   tickets
-    .filter((t) => t.closedAt)
+    .filter((t) => t.status === 'concluido')
     .forEach((t) => {
       if (!byAssignee[t.assignee]) byAssignee[t.assignee] = { total: 0, withinSla: 0 }
       byAssignee[t.assignee].total++
-      if (!isOverdue(t)) byAssignee[t.assignee].withinSla++
+      if (!isOverdue(t, slaTargets)) byAssignee[t.assignee].withinSla++
     })
 
   return Object.entries(byAssignee).map(([assignee, { total, withinSla }]) => {
