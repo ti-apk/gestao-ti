@@ -233,7 +233,7 @@ export function getFinalizedDensityAggregate(tickets) {
 export function getDemandByArea(tickets) {
   const counts = {}
   tickets
-    .filter((t) => t.status !== 'cancelado')
+    .filter((t) => t.status !== 'cancelado' && t.category)
     .forEach((t) => {
       counts[t.category] = (counts[t.category] || 0) + 1
     })

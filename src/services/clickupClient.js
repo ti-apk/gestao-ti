@@ -124,7 +124,7 @@ export function mapClickUpTaskToTicket(task) {
   // com o nome da lista do ClickUp em vez de uma categoria genérica)
   const category = task.tags?.[0]?.name
     ? task.tags[0].name.charAt(0).toUpperCase() + task.tags[0].name.slice(1)
-    : 'Sem Etiqueta'
+    : null
 
   return {
     id: task.id,

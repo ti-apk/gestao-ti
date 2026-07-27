@@ -5,8 +5,7 @@ export function EfficiencyByPriorityTable({ data }) {
         Eficiência por Prioridade
       </h3>
       <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-        Tempo de ciclo médio por prioridade — histórico completo, não segue o
-        filtro de período
+        Tempo de ciclo médio por prioridade
       </p>
 
       <div className="flex-1 overflow-hidden rounded-lg border border-border-light dark:border-border-dark">
