@@ -34,11 +34,6 @@ export default function App() {
       allTickets ? [...new Set(allTickets.map((t) => t.assignee))].sort() : [],
     [allTickets],
   );
-  const categories = useMemo(
-    () =>
-      allTickets ? [...new Set(allTickets.map((t) => t.category))].sort() : [],
-    [allTickets],
-  );
 
   const categories = useMemo(
     () =>
