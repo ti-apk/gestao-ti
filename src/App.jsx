@@ -43,6 +43,11 @@ export default function App() {
     [allTickets],
   );
 
+  const data = useMemo(() => {
+    if (!allTickets) return null;
+    return getDashboardData(allTickets, filters);
+  }, [allTickets, filters]);
+
   if (error) {
     return (
       <Layout
