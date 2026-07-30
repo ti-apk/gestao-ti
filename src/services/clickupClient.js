@@ -38,7 +38,7 @@ export async function fetchClickUpTasks() {
       params: {
         page,
         archived: false,
-        subtasks: true,
+        subtasks: false,
         include_closed: true, // necessário para trazer os tickets "Concluído"/"Cancelado"
       },
     })
