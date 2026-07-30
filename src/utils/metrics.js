@@ -250,21 +250,10 @@ export function getDemandByArea(tickets) {
 }
 
 // -----------------------------------------------------------------------------
-// 5. EFICIÊNCIA POR PRIORIDADE (tabela com semáforo de esforço)
+// 5. EFICIÊNCIA POR PRIORIDADE (tabela: tempo de ciclo médio por prioridade)
 // -----------------------------------------------------------------------------
-// Substitui o antigo "Quadrante de Eficiência" (scatter) por algo mais direto
-// de ler: para cada prioridade, mostra o tempo de ciclo médio (em dias) e um
-// badge colorido indicando o nível médio de esforço.
 const PRIORITY_ORDER = ['urgente', 'alta', 'normal', 'baixa']
 const PRIORITY_LABEL = { urgente: 'Urgente', alta: 'Alta', normal: 'Normal', baixa: 'Baixa' }
-
-// Limiares de esforço na escala 0-20h usada em effortScore (só baseada em
-// "Estimativa de Tempo" agora — ver clickupClient.js)
-function effortLevel(avgEffort) {
-  if (avgEffort <= 7) return { level: 'baixo', color: 'green' }
-  if (avgEffort <= 13) return { level: 'médio', color: 'amber' }
-  return { level: 'alto', color: 'red' }
-}
 
 export function getEfficiencyByPriority(tickets) {
   const concluded = tickets.filter((t) => t.status === 'concluido')
@@ -287,22 +276,31 @@ export function getEfficiencyByPriority(tickets) {
 }
 
 // -----------------------------------------------------------------------------
-// 6. TAREFAS POR RESPONSÁVEL (em aberto x concluídas)
+// 6. TAREFAS POR RESPONSÁVEL (barras empilhadas por prioridade)
 // -----------------------------------------------------------------------------
-// "Em aberto" agrupa tudo que ainda não foi encerrado: backlog, pendente,
-// em_andamento e bloqueado. Cancelados ficam de fora — não são nem um nem outro.
+// Para cada responsável, conta quantos tickets de cada prioridade ele já
+// trabalhou (qualquer status, exceto cancelado — não representa trabalho real)
 export function getTasksByResponsible(tickets) {
   const byAssignee = {}
 
   tickets
     .filter((t) => t.status !== 'cancelado')
     .forEach((t) => {
-      if (!byAssignee[t.assignee]) byAssignee[t.assignee] = { open: 0, closed: 0 }
-      if (t.status === 'concluido') byAssignee[t.assignee].closed++
-      else byAssignee[t.assignee].open++
+      if (!byAssignee[t.assignee]) {
+        byAssignee[t.assignee] = {
+          assignee: t.assignee,
+          photo: t.assigneePhoto,
+          initials: t.assigneeInitials,
+          baixa: 0,
+          normal: 0,
+          alta: 0,
+          urgente: 0,
+          total: 0,
+        }
+      }
+      byAssignee[t.assignee][t.priority]++
+      byAssignee[t.assignee].total++
     })
 
-  return Object.entries(byAssignee)
-    .map(([assignee, { open, closed }]) => ({ assignee, open, closed, total: open + closed }))
-    .sort((a, b) => b.total - a.total)
+  return Object.values(byAssignee).sort((a, b) => b.total - a.total)
 }

@@ -38,7 +38,7 @@ export async function fetchClickUpTasks() {
       params: {
         page,
         archived: false,
-        subtasks: false,
+        subtasks: false, // subtarefas não são tratadas como tickets próprios no BI
         include_closed: true, // necessário para trazer os tickets "Concluído"/"Cancelado"
       },
     })
@@ -119,12 +119,15 @@ export function mapClickUpTaskToTicket(task) {
     ? Math.max(0, Math.round((closedAt.getTime() - createdAt.getTime()) / 3600000))
     : 0
 
-  // Categoria -> primeira Etiqueta (tag) da task; sem etiqueta, usa "Geral"
-  // (antes caía no nome da Lista, o que fazia tickets sem etiqueta aparecerem
-  // com o nome da lista do ClickUp em vez de uma categoria genérica)
+  // Categoria -> primeira Etiqueta (tag) da task. Sem etiqueta, category fica
+  // null — esses tickets são excluídos do gráfico "Áreas com maior demanda"
+  // (ver getDemandByArea em metrics.js), em vez de caírem num "Geral" genérico.
   const category = task.tags?.[0]?.name
     ? task.tags[0].name.charAt(0).toUpperCase() + task.tags[0].name.slice(1)
     : null
+
+  const firstAssignee = task.assignees?.[0]
+  const assigneeName = firstAssignee?.username || firstAssignee?.email || 'Não atribuído'
 
   return {
     id: task.id,
@@ -132,7 +135,9 @@ export function mapClickUpTaskToTicket(task) {
     category,
     status,
     priority,
-    assignee: task.assignees?.[0]?.username || task.assignees?.[0]?.email || 'Não atribuído',
+    assignee: assigneeName,
+    assigneePhoto: firstAssignee?.profilePicture || null, // pode ser null se a pessoa não tem foto no ClickUp
+    assigneeInitials: firstAssignee?.initials || assigneeName.slice(0, 2).toUpperCase(),
     createdAt: createdAt.toISOString(),
     closedAt: closedAt ? closedAt.toISOString() : null,
     cycleTimeHours,

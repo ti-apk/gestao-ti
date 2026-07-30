@@ -1,6 +1,6 @@
 export function EfficiencyByPriorityTable({ data }) {
   return (
-    <div className="panel flex h-full min-h-0 flex-1 flex-col p-4">
+    <div className="panel flex h-full min-h-0 flex-1 flex-col p-4 lg:flex-[0.55]">
       <h3 className="font-display text-base font-semibold">
         Eficiência por Prioridade
       </h3>
