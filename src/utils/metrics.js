@@ -287,20 +287,22 @@ export function getEfficiencyByPriority(tickets) {
 }
 
 // -----------------------------------------------------------------------------
-// 6. SLA POR RESPONSÁVEL (barras empilhadas: % dentro x fora do prazo)
+// 6. TAREFAS POR RESPONSÁVEL (em aberto x concluídas)
 // -----------------------------------------------------------------------------
-export function getSlaByResponsible(tickets, slaTargets) {
+// "Em aberto" agrupa tudo que ainda não foi encerrado: backlog, pendente,
+// em_andamento e bloqueado. Cancelados ficam de fora — não são nem um nem outro.
+export function getTasksByResponsible(tickets) {
   const byAssignee = {}
+
   tickets
-    .filter((t) => t.status === 'concluido')
+    .filter((t) => t.status !== 'cancelado')
     .forEach((t) => {
-      if (!byAssignee[t.assignee]) byAssignee[t.assignee] = { total: 0, withinSla: 0 }
-      byAssignee[t.assignee].total++
-      if (!isOverdue(t, slaTargets)) byAssignee[t.assignee].withinSla++
+      if (!byAssignee[t.assignee]) byAssignee[t.assignee] = { open: 0, closed: 0 }
+      if (t.status === 'concluido') byAssignee[t.assignee].closed++
+      else byAssignee[t.assignee].open++
     })
 
-  return Object.entries(byAssignee).map(([assignee, { total, withinSla }]) => {
-    const withinPct = total === 0 ? 0 : Math.round((withinSla / total) * 100)
-    return { assignee, withinPct, outOfPct: 100 - withinPct }
-  })
+  return Object.entries(byAssignee)
+    .map(([assignee, { open, closed }]) => ({ assignee, open, closed, total: open + closed }))
+    .sort((a, b) => b.total - a.total)
 }

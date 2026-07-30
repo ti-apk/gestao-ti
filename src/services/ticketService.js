@@ -6,7 +6,7 @@ import {
   getFinalizedDensityAggregate,
   getDemandByArea,
   getEfficiencyByPriority,
-  getSlaByResponsible,
+  getTasksByResponsible,
   getSlaTargets,
   filterTickets,
 } from '../utils/metrics'
@@ -18,7 +18,6 @@ export async function getTickets() {
 }
 
 // Monta todos os dados do dashboard já filtrados pelo painel de Filtros da sidebar
-// (síncrona de propósito: os tickets já foram buscados antes, em getTickets())
 export function getDashboardData(allTickets, filters) {
   const tickets = filterTickets(allTickets, filters)
 
@@ -34,15 +33,13 @@ export function getDashboardData(allTickets, filters) {
       ? { mode: 'aggregate', ...getFinalizedDensityAggregate(tickets) }
       : { mode: 'calendar', weeks: getFinalizedDensityCalendar(tickets) }
 
-  const efficiencyTickets = filterTickets(allTickets,  { ...filters, period: 'all' })
-
   return {
     kpis: getKpiSummary(tickets, slaTargets),
     evolution: getTicketsEvolution(tickets, filters),
     density,
     demand: getDemandByArea(tickets),
-    efficiency: getEfficiencyByPriority(efficiencyTickets),
-    sla: getSlaByResponsible(tickets, slaTargets),
+    efficiency: getEfficiencyByPriority(tickets),
+    tasksByResponsible: getTasksByResponsible(tickets),
     slaTargets,
   }
 }

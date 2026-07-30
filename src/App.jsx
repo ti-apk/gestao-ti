@@ -14,7 +14,7 @@ import { TicketsEvolutionChart } from "./components/charts/TicketsEvolutionChart
 import { OpeningDensityHeatmap } from "./components/charts/OpeningDensityHeatmap";
 import { DemandByAreaChart } from "./components/charts/DemandByAreaChart";
 import { EfficiencyByPriorityTable } from "./components/charts/EfficiencyByPriorityTable";
-import { SlaByResponsibleChart } from "./components/charts/SlaByResponsibleChart";
+import { TasksByResponsibleChart } from "./components/charts/TasksByResponsibleChart";
 import { getTickets, getDashboardData } from "./services/ticketService";
 import { DEFAULT_FILTERS } from "./components/layout/FiltersPanel";
 
@@ -78,7 +78,8 @@ export default function App() {
     );
   }
 
-  const { kpis, evolution, density, demand, efficiency, sla } = data;
+  const { kpis, evolution, density, demand, efficiency, tasksByResponsible } =
+    data;
 
   return (
     <Layout
@@ -126,9 +127,9 @@ export default function App() {
         />
         <KpiCard
           icon={TimerOff}
-          label="Fora do prazo"
+          label="Prazo Estendido"
           value={kpis.overdueCount}
-          sublabel="atrasados"
+          sublabel="além do estimado"
           color="orange"
         />
       </div>
@@ -139,11 +140,11 @@ export default function App() {
         <OpeningDensityHeatmap density={density} />
       </div>
 
-      {/* Linha 3 — Demanda + Quadrante + SLA */}
+      {/* Linha 3 — Demanda + Eficiência + Tarefas por Responsável */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <DemandByAreaChart data={demand} />
         <EfficiencyByPriorityTable data={efficiency} />
-        <SlaByResponsibleChart data={sla} />
+        <TasksByResponsibleChart data={tasksByResponsible} />
       </div>
     </Layout>
   );
