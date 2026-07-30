@@ -2,7 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } 
 
 export function DemandByAreaChart({ data }) {
   return (
-    <div className="panel flex h-full min-h-0 flex-1 flex-col p-4 lg:flex-[0.80]">
+    <div className="panel flex h-full min-h-0 flex-1 flex-col p-4 lg:flex-[0.70]">
       <h3 className="font-display text-base font-semibold">Áreas com maior demanda</h3>
       <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">Identificação por categoria</p>
 
