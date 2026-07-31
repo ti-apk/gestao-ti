@@ -1,9 +1,10 @@
-// Mesmas cores usadas pelo ClickUp para prioridade: cinza/azul/amarelo/vermelho
-const PRIORITY_SEGMENTS = [
-  { key: "baixa", label: "Baixa", className: "bg-gray-400" },
-  { key: "normal", label: "Normal", className: "bg-brand-blue" },
-  { key: "alta", label: "Alta", className: "bg-brand-amber" },
-  { key: "urgente", label: "Urgente", className: "bg-brand-red" },
+// Mesmas cores usadas no ClickUp para cada status
+const STATUS_SEGMENTS = [
+  { key: "backlog", label: "Backlog", color: "#f26aae" },
+  { key: "pendente", label: "Pendente", color: "#da4449" },
+  { key: "em_andamento", label: "Em Andamento", color: "#008af2" },
+  { key: "aguardando_interno", label: "Aguardando Interno", color: "#f2bb3a" },
+  { key: "aguardando_externo", label: "Aguardando Externo", color: "#eb6308" },
 ];
 
 function firstName(fullName) {
@@ -18,7 +19,7 @@ export function TasksByResponsibleChart({ data }) {
         Tarefas por Responsável
       </h3>
       <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-        Por prioridade dos chamados
+        Por status dos chamados
       </p>
 
       <div className="flex flex-1 flex-col justify-center gap-4">
@@ -43,14 +44,18 @@ export function TasksByResponsibleChart({ data }) {
               </div>
 
               <div className="flex h-6 flex-1 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
-                {PRIORITY_SEGMENTS.map(({ key, className }) => {
+                {STATUS_SEGMENTS.map(({ key, color }) => {
                   const count = row[key];
-                  if (count === 0) return null;
+                  if (!count) return null;
                   return (
                     <div
                       key={key}
-                      className={`flex min-w-[20px] items-center justify-center text-[11px] font-semibold text-white ${className}`}
-                      style={{ flexGrow: count, flexBasis: 0 }}
+                      className="flex min-w-[20px] items-center justify-center text-[11px] font-semibold text-white"
+                      style={{
+                        backgroundColor: color,
+                        flexGrow: count,
+                        flexBasis: 0,
+                      }}
                     >
                       {count}
                     </div>
@@ -66,10 +71,14 @@ export function TasksByResponsibleChart({ data }) {
         })}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
-        {PRIORITY_SEGMENTS.map(({ key, label, className }) => (
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
+        {STATUS_SEGMENTS.map(({ key, label, color }) => (
           <span key={key} className="flex items-center gap-1.5">
-            <span className={`h-3 w-3 rounded ${className}`} /> {label}
+            <span
+              className="h-3 w-3 rounded"
+              style={{ backgroundColor: color }}
+            />{" "}
+            {label}
           </span>
         ))}
       </div>

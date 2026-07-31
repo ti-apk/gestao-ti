@@ -87,6 +87,20 @@ function mapStatus(status) {
   return 'em_andamento'
 }
 
+const DISPLAY_STATUS_MAP = {
+  backlog: 'backlog',
+  pendente: 'pendente',
+  'em execucao': 'em_andamento',
+  'aguardando interno': 'aguardando_interno',
+  'aguardando externo': 'aguardando_externo',
+  cancelado: 'cancelado',
+  concluido: 'concluido',
+}
+
+function mapDisplayStatus(status) {
+  return DISPLAY_STATUS_MAP[normalize(status?.status)] || null
+}
+
 function mapPriority(clickUpPriority) {
   switch (clickUpPriority) {
     case 'urgent':
@@ -134,6 +148,7 @@ export function mapClickUpTaskToTicket(task) {
     title: task.name,
     category,
     status,
+    displayStatus: mapDisplayStatus(task.status),
     priority,
     assignee: assigneeName,
     assigneePhoto: firstAssignee?.profilePicture || null, // pode ser null se a pessoa não tem foto no ClickUp

@@ -250,7 +250,7 @@ export function getDemandByArea(tickets) {
 }
 
 // -----------------------------------------------------------------------------
-// 5. EFICIÊNCIA POR PRIORIDADE (tabela: tempo de ciclo médio por prioridade)
+// 5. EFICIÊNCIA POR PRIORIDADE (tempo de ciclo médio por prioridade)
 // -----------------------------------------------------------------------------
 const PRIORITY_ORDER = ['urgente', 'alta', 'normal', 'baixa']
 const PRIORITY_LABEL = { urgente: 'Urgente', alta: 'Alta', normal: 'Normal', baixa: 'Baixa' }
@@ -276,29 +276,34 @@ export function getEfficiencyByPriority(tickets) {
 }
 
 // -----------------------------------------------------------------------------
-// 6. TAREFAS POR RESPONSÁVEL (barras empilhadas por prioridade)
+// 6. TAREFAS POR RESPONSÁVEL (barras empilhadas por status)
 // -----------------------------------------------------------------------------
-// Para cada responsável, conta quantos tickets de cada prioridade ele já
-// trabalhou (qualquer status, exceto cancelado — não representa trabalho real)
+// Para cada responsável, conta quantos tickets estão em cada status. Cancelado
+// e status não reconhecidos ficam de fora (não representam trabalho ativo).
+const DISPLAY_STATUS_ORDER = [
+  'backlog',
+  'pendente',
+  'em_andamento',
+  'aguardando_interno',
+  'aguardando_externo',
+]
+
 export function getTasksByResponsible(tickets) {
   const byAssignee = {}
 
   tickets
-    .filter((t) => t.status !== 'cancelado')
+    .filter((t) => t.displayStatus && t.displayStatus !== 'cancelado' && t.displayStatus !== 'concluido')
     .forEach((t) => {
       if (!byAssignee[t.assignee]) {
         byAssignee[t.assignee] = {
           assignee: t.assignee,
           photo: t.assigneePhoto,
           initials: t.assigneeInitials,
-          baixa: 0,
-          normal: 0,
-          alta: 0,
-          urgente: 0,
           total: 0,
+          ...Object.fromEntries(DISPLAY_STATUS_ORDER.map((s) => [s, 0])),
         }
       }
-      byAssignee[t.assignee][t.priority]++
+      byAssignee[t.assignee][t.displayStatus]++
       byAssignee[t.assignee].total++
     })
 
