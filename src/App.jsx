@@ -8,6 +8,7 @@ import {
   TimerOff,
 } from "lucide-react";
 
+import { useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import { KpiCard } from "./components/cards/KpiCard";
 import { TicketsEvolutionChart } from "./components/charts/TicketsEvolutionChart";
@@ -24,7 +25,16 @@ export default function App() {
   const [allTickets, setAllTickets] = useState(null);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [activePage, setActivePage] = useState("dashboard");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.pathname === "/") navigate("/dashboard", { replace: true });
+  }, [location.pathname, navigate]);
+
+  const activePage = location.pathname === "/tickets" ? "tickets" : "dashboard";
+  const handleNavigate = (page) =>
+    navigate(page === "tickets" ? "/tickets" : "/dashboard");
 
   useEffect(() => {
     getTickets()
@@ -65,7 +75,7 @@ export default function App() {
     assignees,
     categories,
     activePage,
-    onNavigate: setActivePage,
+    onNavigate: handleNavigate,
   };
 
   if (error) {
