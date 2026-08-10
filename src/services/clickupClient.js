@@ -87,6 +87,10 @@ function mapStatus(status) {
   return 'em_andamento'
 }
 
+// Versão granular do status, só para exibição (ex: gráfico "Tarefas por
+// Responsável"). Diferente de STATUS_MAP: aqui "Aguardando Interno" e
+// "Aguardando Externo" continuam separados, porque a lógica de SLA/Fora do
+// Prazo (que usa STATUS_MAP/"bloqueado") não deve mudar por causa disso.
 const DISPLAY_STATUS_MAP = {
   backlog: 'backlog',
   pendente: 'pendente',
@@ -140,8 +144,23 @@ export function mapClickUpTaskToTicket(task) {
     ? task.tags[0].name.charAt(0).toUpperCase() + task.tags[0].name.slice(1)
     : null
 
-  const firstAssignee = task.assignees?.[0]
-  const assigneeName = firstAssignee?.username || firstAssignee?.email || 'Não atribuído'
+  // Todas as etiquetas da task (não só a primeira) -> usado no Kanban da aba
+  // Tickets, que mostra a lista completa de etiquetas em cada card
+  const tags = (task.tags || []).map((t) => t.name.charAt(0).toUpperCase() + t.name.slice(1))
+
+  // Responsáveis -> TODOS os assignees da task (não só o primeiro), porque um
+  // ticket com múltiplos responsáveis deve contar para cada um deles nos
+  // indicadores (decisão do time: opção B, ver conversa sobre múltiplos
+  // responsáveis). Cada item carrega nome, foto e iniciais próprios.
+  const rawAssignees = task.assignees?.length ? task.assignees : [null]
+  const assignees = rawAssignees.map((a) => {
+    const name = a?.username || a?.email || 'Não atribuído'
+    return {
+      name,
+      photo: a?.profilePicture || null,
+      initials: a?.initials || name.slice(0, 2).toUpperCase(),
+    }
+  })
 
   return {
     id: task.id,
@@ -150,9 +169,11 @@ export function mapClickUpTaskToTicket(task) {
     status,
     displayStatus: mapDisplayStatus(task.status),
     priority,
-    assignee: assigneeName,
-    assigneePhoto: firstAssignee?.profilePicture || null, // pode ser null se a pessoa não tem foto no ClickUp
-    assigneeInitials: firstAssignee?.initials || assigneeName.slice(0, 2).toUpperCase(),
+    assignee: assignees[0].name,
+    assigneePhoto: assignees[0].photo,
+    assigneeInitials: assignees[0].initials,
+    assignees,
+    tags,
     createdAt: createdAt.toISOString(),
     closedAt: closedAt ? closedAt.toISOString() : null,
     cycleTimeHours,

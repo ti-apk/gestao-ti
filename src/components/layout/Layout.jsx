@@ -1,7 +1,15 @@
-import { Sidebar } from './Sidebar'
-import { Topbar } from './Topbar'
+import { Sidebar } from "./Sidebar";
+import { Topbar } from "./Topbar";
 
-export function Layout({ children, filters, onFiltersChange, assignees, categories }) {
+export function Layout({
+  children,
+  filters,
+  onFiltersChange,
+  assignees,
+  categories,
+  activePage,
+  onNavigate,
+}) {
   return (
     <div className="flex h-screen flex-col gap-3 overflow-hidden bg-surface-light p-3 dark:bg-surface-dark lg:gap-4 lg:p-4">
       <Topbar />
@@ -13,11 +21,13 @@ export function Layout({ children, filters, onFiltersChange, assignees, categori
           onFiltersChange={onFiltersChange}
           assignees={assignees}
           categories={categories}
+          activePage={activePage}
+          onNavigate={onNavigate}
         />
         <main className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 lg:gap-4 lg:p-4">
           {children}
         </main>
       </div>
     </div>
-  )
+  );
 }

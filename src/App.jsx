@@ -15,13 +15,16 @@ import { OpeningDensityHeatmap } from "./components/charts/OpeningDensityHeatmap
 import { DemandByAreaChart } from "./components/charts/DemandByAreaChart";
 import { EfficiencyByPriorityTable } from "./components/charts/EfficiencyByPriorityTable";
 import { TasksByResponsibleChart } from "./components/charts/TasksByResponsibleChart";
+import { KanbanBoard } from "./components/tickets/KanbanBoard";
 import { getTickets, getDashboardData } from "./services/ticketService";
+import { filterTickets } from "./utils/metrics";
 import { DEFAULT_FILTERS } from "./components/layout/FiltersPanel";
 
 export default function App() {
   const [allTickets, setAllTickets] = useState(null);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [activePage, setActivePage] = useState("dashboard");
 
   useEffect(() => {
     getTickets()
@@ -48,14 +51,26 @@ export default function App() {
     return getDashboardData(allTickets, filters);
   }, [allTickets, filters]);
 
+  // Kanban ignora o filtro de PERÍODO, pelo mesmo motivo do gráfico "Tarefas
+  // por Responsável": mostra o status atual dos tickets, não faz sentido
+  // limitar por quando foram criados. Ainda respeita Responsável/Categoria.
+  const kanbanTickets = useMemo(() => {
+    if (!allTickets) return [];
+    return filterTickets(allTickets, { ...filters, period: "all" });
+  }, [allTickets, filters]);
+
+  const layoutProps = {
+    filters,
+    onFiltersChange: setFilters,
+    assignees,
+    categories,
+    activePage,
+    onNavigate: setActivePage,
+  };
+
   if (error) {
     return (
-      <Layout
-        filters={filters}
-        onFiltersChange={setFilters}
-        assignees={assignees}
-        categories={categories}
-      >
+      <Layout {...layoutProps}>
         <p className="text-sm text-brand-red">
           Não foi possível carregar os tickets do ClickUp: {error}
         </p>
@@ -65,15 +80,18 @@ export default function App() {
 
   if (!data) {
     return (
-      <Layout
-        filters={filters}
-        onFiltersChange={setFilters}
-        assignees={assignees}
-        categories={categories}
-      >
+      <Layout {...layoutProps}>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Carregando dashboard...
         </p>
+      </Layout>
+    );
+  }
+
+  if (activePage === "tickets") {
+    return (
+      <Layout {...layoutProps}>
+        <KanbanBoard tickets={kanbanTickets} />
       </Layout>
     );
   }
@@ -82,12 +100,7 @@ export default function App() {
     data;
 
   return (
-    <Layout
-      filters={filters}
-      onFiltersChange={setFilters}
-      assignees={assignees}
-      categories={categories}
-    >
+    <Layout {...layoutProps}>
       {/* Linha 1 — 6 KPI cards */}
       <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard

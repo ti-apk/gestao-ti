@@ -294,17 +294,21 @@ export function getTasksByResponsible(tickets) {
   tickets
     .filter((t) => t.displayStatus && t.displayStatus !== 'cancelado' && t.displayStatus !== 'concluido')
     .forEach((t) => {
-      if (!byAssignee[t.assignee]) {
-        byAssignee[t.assignee] = {
-          assignee: t.assignee,
-          photo: t.assigneePhoto,
-          initials: t.assigneeInitials,
-          total: 0,
-          ...Object.fromEntries(DISPLAY_STATUS_ORDER.map((s) => [s, 0])),
+      const people = t.assignees?.length ? t.assignees : [{ name: t.assignee, photo: t.assigneePhoto, initials: t.assigneeInitials }]
+
+      people.forEach((person) => {
+        if (!byAssignee[person.name]) {
+          byAssignee[person.name] = {
+            assignee: person.name,
+            photo: person.photo,
+            initials: person.initials,
+            total: 0,
+            ...Object.fromEntries(DISPLAY_STATUS_ORDER.map((s) => [s, 0])),
+          }
         }
-      }
-      byAssignee[t.assignee][t.displayStatus]++
-      byAssignee[t.assignee].total++
+        byAssignee[person.name][t.displayStatus]++
+        byAssignee[person.name].total++
+      })
     })
 
   return Object.values(byAssignee).sort((a, b) => b.total - a.total)
