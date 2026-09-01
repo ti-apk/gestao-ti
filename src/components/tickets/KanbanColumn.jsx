@@ -2,7 +2,10 @@ import { TicketCard } from "./TicketCard";
 
 export function KanbanColumn({ title, color, tickets }) {
   return (
-    <div className="panel flex h-full min-w-[240px] flex-1 flex-col p-0">
+    <div 
+      className="panel flex h-full min-w-[240px] flex-1 flex-col p-0"
+      style={{backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`}}
+    >
       <div className="flex items-center gap-2 border-b border-border-light px-3 py-3 dark:border-border-dark">
         <span
           className="h-2.5 w-2.5 shrink-0 rounded-full"

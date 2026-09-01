@@ -15,6 +15,11 @@ export function TicketCard({ ticket }) {
     <div className="panel flex flex-col gap-2.5 p-3">
       <p className="line-clamp-2 text-sm font-medium text-gray-800 dark:text-gray-100">{ticket.title}</p>
 
+      <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Data de Criação:</p>
+      <p className="text-sm font-regular text-gray-500 dark:text-gray-300">
+        {new Date(ticket.createdAt).toLocaleDateString('pt-BR')}
+      </p>
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex -space-x-2">
