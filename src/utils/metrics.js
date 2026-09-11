@@ -8,8 +8,9 @@ import {
   pickGranularity,
   bucketLabelFor,
   bucketSortKeyFor,
+  weekRangeLabel,
 } from './dateHelpers'
-import { isWithinInterval, isSameDay, startOfDay, subDays, addDays, differenceInCalendarDays } from 'date-fns'
+import { isWithinInterval, isSameDay, startOfDay, startOfWeek, subDays, addDays } from 'date-fns'
 
 // -----------------------------------------------------------------------------
 // META DE SLA — calculada a partir do histórico real do time, não de um prazo
@@ -134,7 +135,7 @@ export function getTicketsEvolution(tickets, filters = {}) {
   const period = filters.period || 'all'
 
   if (period === 'this_week') return getDailyEvolution(tickets)
-  if (period === 'this_month' || period === 'last_30_days') return getWeeklyEvolution(tickets, filters)
+  if (period === 'this_month' || period === 'last_30_days') return getWeeklyEvolution(tickets)
   return getMonthlyEvolution(tickets)
 }
 
@@ -150,21 +151,28 @@ function getDailyEvolution(tickets) {
   })
 }
 
-// Agrupa por semana, contando a partir do início do período filtrado
-// (início do mês para "Este mês", ou hoje-30 para "Últimos 30 dias")
-function getWeeklyEvolution(tickets, filters) {
-  const { start } = getPeriodRange(filters)
-  const rangeStart = start || startOfDay(new Date())
-
+// Agrupa por semana de calendário (Domingo -> Sábado), a mesma convenção usada
+// no restante do dashboard (heatmap, "Esta semana" etc.) — não é relativo ao
+// início do período filtrado, é a semana real de cada data
+function getWeeklyEvolution(tickets) {
   const byWeek = {}
   const bump = (dateISO, field) => {
     const date = new Date(dateISO)
-    const weekIndex = Math.floor(differenceInCalendarDays(date, rangeStart) / 7)
-    if (weekIndex < 0) return
-    if (!byWeek[weekIndex]) {
-      byWeek[weekIndex] = { key: weekIndex, label: `Sem ${weekIndex + 1}`, criados: 0, finalizados: 0 }
+    const weekStart = startOfWeek(date, { weekStartsOn: 0 })
+    const key = weekStart.getTime()
+    if (!byWeek[key]) {
+      const weekEnd = addDays(weekStart, 6)
+      const { dayRange, monthRange } = weekRangeLabel(weekStart, weekEnd)
+      byWeek[key] = {
+        key,
+        label: dayRange, // fallback pra tooltip/contextos de linha única
+        dayRange,
+        monthRange,
+        criados: 0,
+        finalizados: 0,
+      }
     }
-    byWeek[weekIndex][field]++
+    byWeek[key][field]++
   }
 
   tickets.forEach((t) => bump(t.createdAt, 'criados'))

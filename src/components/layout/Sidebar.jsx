@@ -1,9 +1,10 @@
-import { LayoutDashboard, ListChecks, SlidersHorizontal } from "lucide-react";
+import { LayoutDashboard, ListChecks, Zap, SlidersHorizontal } from "lucide-react";
 import { FiltersPanel } from "./FiltersPanel";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "tickets", label: "Tickets", icon: ListChecks },
+  { key: "execucao", label: "Em Execução", icon: Zap },
 ];
 
 export function Sidebar({
@@ -49,7 +50,7 @@ export function Sidebar({
           onChange={onFiltersChange}
           assignees={assignees}
           categories={categories}
-          showPeriod={activePage !== 'tickets'}
+          showPeriod={activePage === 'dashboard'}
         />
       </div>
     </aside>

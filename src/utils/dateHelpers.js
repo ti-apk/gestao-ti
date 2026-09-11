@@ -132,3 +132,11 @@ export function getPeriodRange(filters) {
       return { start: startOfMonth(now), end: endOfDay(now) }
   }
 }
+
+export function weekRangeLabel(weekStart, weekEnd) {
+  const dayRange = `${format(weekStart, 'dd')}-${format(weekEnd, 'dd')}`
+  const startMonth = format(weekStart, 'MMM', { locale: ptBR }).toLowerCase()
+  const endMonth = format(weekEnd, 'MMM', { locale: ptBR }).toLowerCase()
+  const monthRange = startMonth === endMonth ? startMonth : `${startMonth}-${endMonth}`
+  return { dayRange, monthRange }
+}

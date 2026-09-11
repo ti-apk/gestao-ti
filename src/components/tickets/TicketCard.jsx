@@ -6,13 +6,30 @@ function firstName(fullName) {
   return fullName.trim().split(/\s+/)[0]
 }
 
-export function TicketCard({ ticket }) {
+// Mesma paleta da PriorityFlag, mas em hex — aplicada via style inline (não
+// depende da ordem das camadas do Tailwind pra sobrescrever a borda cinza
+// padrão do .panel)
+const PRIORITY_BORDER_COLOR = {
+  baixa: '#9CA3AF', // gray-400
+  normal: '#2E7DF7', // brand-blue
+  alta: '#F5A623', // brand-amber
+  urgente: '#E8483C', // brand-red
+}
+
+export function TicketCard({ ticket, highlightPriority = false }) {
   const people = ticket.assignees?.length
     ? ticket.assignees
     : [{ name: ticket.assignee, photo: ticket.assigneePhoto, initials: ticket.assigneeInitials }]
 
+  const borderColor = highlightPriority
+    ? PRIORITY_BORDER_COLOR[ticket.priority] || PRIORITY_BORDER_COLOR.normal
+    : undefined
+
   return (
-    <div className="panel flex flex-col gap-2.5 p-3">
+    <div
+      className={`panel flex flex-col gap-2.5 p-3 ${highlightPriority ? 'border-1' : ''}`}
+      style={borderColor ? { borderColor } : undefined}
+    >
       <p className="line-clamp-2 text-sm font-medium text-gray-800 dark:text-gray-100">{ticket.title}</p>
 
       <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Data de Criação:</p>

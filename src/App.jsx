@@ -17,6 +17,7 @@ import { DemandByAreaChart } from "./components/charts/DemandByAreaChart";
 import { EfficiencyByPriorityTable } from "./components/charts/EfficiencyByPriorityTable";
 import { TasksByResponsibleChart } from "./components/charts/TasksByResponsibleChart";
 import { KanbanBoard } from "./components/tickets/KanbanBoard";
+import { ExecutionGrid } from "./components/tickets/ExecutionGrid";
 import { getTickets, getDashboardData } from "./services/ticketService";
 import { filterTickets } from "./utils/metrics";
 import { DEFAULT_FILTERS } from "./components/layout/FiltersPanel";
@@ -32,9 +33,15 @@ export default function App() {
     if (location.pathname === "/") navigate("/dashboard", { replace: true });
   }, [location.pathname, navigate]);
 
-  const activePage = location.pathname === "/tickets" ? "tickets" : "dashboard";
-  const handleNavigate = (page) =>
-    navigate(page === "tickets" ? "/tickets" : "/dashboard");
+  const activePage =
+    location.pathname === "/tickets"
+      ? "tickets"
+      : location.pathname === "/execucao"
+        ? "execucao"
+        : "dashboard";
+
+  const PAGE_PATHS = { tickets: "/tickets", execucao: "/execucao", dashboard: "/dashboard" };
+  const handleNavigate = (page) => navigate(PAGE_PATHS[page] || "/dashboard");
 
   useEffect(() => {
     getTickets()
@@ -69,6 +76,13 @@ export default function App() {
     return filterTickets(allTickets, { ...filters, period: "all" });
   }, [allTickets, filters]);
 
+  // Aba "Em Execução" -> mesmo recorte do Kanban, só que restrito ao status
+  // em_andamento
+  const executionTickets = useMemo(
+    () => kanbanTickets.filter((t) => t.displayStatus === "em_andamento"),
+    [kanbanTickets],
+  );
+
   const layoutProps = {
     filters,
     onFiltersChange: setFilters,
@@ -102,6 +116,14 @@ export default function App() {
     return (
       <Layout {...layoutProps}>
         <KanbanBoard tickets={kanbanTickets} />
+      </Layout>
+    );
+  }
+
+  if (activePage === "execucao") {
+    return (
+      <Layout {...layoutProps}>
+        <ExecutionGrid tickets={executionTickets} />
       </Layout>
     );
   }
