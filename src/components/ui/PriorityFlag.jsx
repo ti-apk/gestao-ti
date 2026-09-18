@@ -7,12 +7,12 @@ const PRIORITY_STYLES = {
   urgente: { label: 'Urgente', className: 'text-brand-red' },
 }
 
-export function PriorityFlag({ priority }) {
+export function PriorityFlag({ priority, compact = false }) {
   const style = PRIORITY_STYLES[priority] || PRIORITY_STYLES.normal
 
   return (
-    <span className={`flex items-center gap-1 text-xs font-medium ${style.className}`}>
-      <Flag size={12} fill="currentColor" />
+    <span className={`flex items-center gap-1 font-medium ${compact ? 'text-[10px]' : 'text-xs'} ${style.className}`}>
+      <Flag size={compact ? 10 : 12} fill="currentColor" />
       {style.label}
     </span>
   )

@@ -16,7 +16,7 @@ const PRIORITY_BORDER_COLOR = {
   urgente: '#E8483C', // brand-red
 }
 
-export function TicketCard({ ticket, highlightPriority = false }) {
+export function TicketCard({ ticket, highlightPriority = false, compact = false }) {
   const people = ticket.assignees?.length
     ? ticket.assignees
     : [{ name: ticket.assignee, photo: ticket.assigneePhoto, initials: ticket.assigneeInitials }]
@@ -25,9 +25,35 @@ export function TicketCard({ ticket, highlightPriority = false }) {
     ? PRIORITY_BORDER_COLOR[ticket.priority] || PRIORITY_BORDER_COLOR.normal
     : undefined
 
+  if (compact) {
+    return (
+      <div
+        className="panel flex flex-col gap-1.5 p-2.5"
+        style={borderColor ? { borderColor, borderWidth: 2 } : undefined}
+      >
+        <p className="line-clamp-2 text-xs font-medium text-gray-800 dark:text-gray-100">{ticket.title}</p>
+
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            {new Date(ticket.createdAt).toLocaleDateString('pt-BR')}
+          </span>
+          <PriorityFlag priority={ticket.priority} compact />
+        </div>
+
+        {ticket.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {ticket.tags.map((tag) => (
+              <TagChip key={tag}>{tag}</TagChip>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
-      className={`panel flex flex-col gap-2.5 p-3 ${highlightPriority ? 'border-1' : ''}`}
+      className={`panel flex flex-col gap-2.5 p-3 ${highlightPriority ? 'border-2' : ''}`}
       style={borderColor ? { borderColor } : undefined}
     >
       <p className="line-clamp-2 text-sm font-medium text-gray-800 dark:text-gray-100">{ticket.title}</p>
