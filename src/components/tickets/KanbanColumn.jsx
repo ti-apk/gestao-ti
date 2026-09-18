@@ -1,10 +1,11 @@
 import { TicketCard } from "./TicketCard";
+import { hexToRgba } from "../../utils/color";
 
 export function KanbanColumn({ title, color, tickets }) {
   return (
-    <div 
+    <div
       className="panel flex h-full min-w-[240px] flex-1 flex-col p-0"
-      style={{backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`}}
+      style={{ backgroundColor: hexToRgba(color, 0.1) }}
     >
       <div className="flex items-center gap-2 border-b border-border-light px-3 py-3 dark:border-border-dark">
         <span

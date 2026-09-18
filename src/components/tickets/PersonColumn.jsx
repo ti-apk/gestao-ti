@@ -1,10 +1,11 @@
 import { TicketCard } from './TicketCard'
+import { hexToRgba } from '../../utils/color'
 
 export function PersonColumn({ person, tickets, color }) {
     return (
         <div
             className="panel flex h-full min-w-[220px] flex-1 flex-col p-0"
-            style={color ? { backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)` } : undefined}
+            style={color ? { backgroundColor: hexToRgba(color, 0.1) } : undefined}
         >
             <div className="flex items-center gap-2 border-b border-border-light px-3 py-3 dark:border-border-dark">
                 {person.photo ? (

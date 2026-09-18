@@ -43,11 +43,44 @@ export default function App() {
   const PAGE_PATHS = { tickets: "/tickets", execucao: "/execucao", dashboard: "/dashboard" };
   const handleNavigate = (page) => navigate(PAGE_PATHS[page] || "/dashboard");
 
-  useEffect(() => {
+  const refreshTickets = () => {
     getTickets()
       .then(setAllTickets)
       .catch((err) => setError(err.message));
+  };
+
+  useEffect(() => {
+    refreshTickets();
   }, []);
+
+  // Modo apresentação: a cada 2 minutos, busca os tickets de novo no ClickUp
+  // e avança pra próxima aba (Dashboard -> Tickets -> Em Execução -> ...).
+  // O timer reinicia sempre que a rota muda — inclusive por navegação manual,
+  // então clicar numa aba também "reseta o relógio" a partir de onde parou.
+  // secondsLeft conta 1 em 1 segundo só pra alimentar o timer visual no Topbar.
+  const ROTATION_PAGES = ["dashboard", "tickets", "execucao"];
+  const ROTATION_SECONDS = 2 * 60; // 2 minutos
+
+  const [secondsLeft, setSecondsLeft] = useState(ROTATION_SECONDS);
+
+  useEffect(() => {
+    setSecondsLeft(ROTATION_SECONDS);
+
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          refreshTickets();
+          const currentIndex = ROTATION_PAGES.indexOf(activePage);
+          const nextPage = ROTATION_PAGES[(currentIndex + 1) % ROTATION_PAGES.length];
+          navigate(PAGE_PATHS[nextPage]);
+          return ROTATION_SECONDS;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [location.pathname]);
 
   const assignees = useMemo(
     () =>
@@ -90,6 +123,7 @@ export default function App() {
     categories,
     activePage,
     onNavigate: handleNavigate,
+    secondsLeft,
   };
 
   if (error) {

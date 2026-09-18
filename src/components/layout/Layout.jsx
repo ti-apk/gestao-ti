@@ -9,10 +9,11 @@ export function Layout({
   categories,
   activePage,
   onNavigate,
+  secondsLeft,
 }) {
   return (
     <div className="flex h-screen flex-col gap-3 overflow-hidden bg-surface-light p-3 dark:bg-surface-dark lg:gap-4 lg:p-4">
-      <Topbar />
+      <Topbar secondsLeft={secondsLeft} />
 
       {/* Moldura única contendo sidebar + conteúdo (dá a sensação de área separada do header) */}
       <div className="app-frame flex min-h-0 flex-1 overflow-hidden">
