@@ -27,7 +27,7 @@ export function Sidebar({
 
   return (
     <aside
-      className={`flex shrink-0 flex-col gap-4 overflow-y-auto overflow-x-hidden border-r border-border-light bg-surface-card py-4 transition-all duration-200 dark:border-border-dark dark:bg-surface-dark-card ${collapsed ? "w-16" : "w-56"
+      className={`hidden shrink-0 flex-col gap-4 overflow-y-auto overflow-x-hidden border-r border-border-light bg-surface-card py-4 transition-all duration-200 dark:border-border-dark dark:bg-surface-dark-card lg:flex ${collapsed ? "w-16" : "w-56"
         }`}
     >
       <div className={`flex px-3 ${collapsed ? "justify-center" : "justify-end"}`}>

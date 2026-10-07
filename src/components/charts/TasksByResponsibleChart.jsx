@@ -14,7 +14,7 @@ function firstName(fullName) {
 
 export function TasksByResponsibleChart({ data }) {
   return (
-    <div className="panel flex h-full min-h-0 flex-1 flex-col p-4">
+    <div className="panel flex shrink-0 flex-col p-4 lg:h-full lg:min-h-0 lg:flex-1 lg:shrink">
       <h3 className="font-display text-base font-semibold">
         Tarefas por Responsável
       </h3>

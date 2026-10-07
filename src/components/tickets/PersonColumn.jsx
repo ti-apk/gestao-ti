@@ -4,7 +4,10 @@ import { hexToRgba } from '../../utils/color'
 export function PersonColumn({ person, tickets, color }) {
     return (
         <div
-            className="panel flex h-full min-w-[220px] flex-1 flex-col p-0"
+            // Mesma lógica do KanbanColumn: no mobile cada pessoa ocupa quase
+            // a tela toda e a rolagem "encaixa" nela (snap); no desktop volta
+            // a dividir o espaço igualmente entre as colunas.
+            className="panel flex h-full w-[85vw] max-w-[340px] shrink-0 snap-start flex-col p-0 lg:w-auto lg:min-w-[220px] lg:flex-1 lg:shrink"
             style={color ? { backgroundColor: hexToRgba(color, 0.1) } : undefined}
         >
             <div className="flex items-center gap-2 border-b border-border-light px-3 py-3 dark:border-border-dark">

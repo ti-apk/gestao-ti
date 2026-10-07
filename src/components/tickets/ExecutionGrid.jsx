@@ -39,7 +39,10 @@ export function ExecutionGrid({ tickets }) {
       {columns.length === 0 ? (
         <p className="py-10 text-center text-sm text-gray-400">Nenhum ticket em execução</p>
       ) : (
-        <div className="flex h-full min-h-0 gap-3 overflow-x-auto pb-1">
+        // Mesma lógica do Kanban: no mobile/tablet vira scroll horizontal com
+        // snap, uma coluna por pessoa de cada vez; no desktop (lg+) continua
+        // sendo o board completo, altura travada na tela.
+        <div className="flex h-[calc(100dvh-260px)] snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:h-full lg:min-h-0 lg:snap-none">
           {columns.map(({ person, tickets: personTickets }, index) => (
             <PersonColumn
               key={person.name}

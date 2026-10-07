@@ -8,7 +8,7 @@ export function CompletedByResponsibleChart({ data }) {
   const { byResponsible, totalConcluidos } = data
 
   return (
-    <div className="panel flex h-full min-h-0 flex-1 flex-col p-4 lg:flex-[0.52]">
+    <div className="panel flex h-[300px] shrink-0 flex-col p-4 lg:h-full lg:min-h-0 lg:flex-[0.52] lg:shrink">
       <h3 className="font-display text-base font-semibold">Concluídos por responsável</h3>
       <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">Tickets concluídos nesta semana</p>
 

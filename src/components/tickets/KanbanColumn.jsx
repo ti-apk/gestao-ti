@@ -4,7 +4,10 @@ import { hexToRgba } from "../../utils/color";
 export function KanbanColumn({ title, color, tickets }) {
   return (
     <div
-      className="panel flex h-full min-w-[240px] flex-1 flex-col p-0"
+      // Mobile: largura fixa (~88% da tela) + snap-start, pra rolagem parar
+      // alinhada em cada coluna. Desktop (lg+): volta a dividir o espaço
+      // igualmente entre as colunas, como antes.
+      className="panel flex h-full w-[88vw] max-w-[360px] shrink-0 snap-start flex-col p-0 lg:w-auto lg:min-w-[240px] lg:flex-1 lg:shrink"
       style={{ backgroundColor: hexToRgba(color, 0.1) }}
     >
       <div className="flex items-center gap-2 border-b border-border-light px-3 py-3 dark:border-border-dark">

@@ -42,7 +42,7 @@ export function TicketsEvolutionChart({ data }) {
   const hasTwoLineLabels = data.some((d) => d.monthRange)
 
   return (
-    <div className="panel flex h-full min-h-0 flex-1 flex-col p-4">
+    <div className="panel flex h-[300px] shrink-0 flex-col p-4 lg:h-full lg:min-h-0 lg:flex-1 lg:shrink">
       <h3 className="font-display text-base font-semibold">Evolução de tickets</h3>
       <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
         Contagem de status criados x finalizados

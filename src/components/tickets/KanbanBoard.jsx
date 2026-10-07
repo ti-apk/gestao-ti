@@ -10,7 +10,12 @@ const COLUMNS = [
 
 export function KanbanBoard({ tickets }) {
   return (
-    <div className="flex h-full min-h-0 gap-3 overflow-x-auto pb-1">
+    // Mobile/tablet: scroll horizontal com "snap" — cada coluna ocupa quase a
+    // largura inteira da tela e a rolagem para alinhada nela (como trocar de
+    // cartão), já que 5 colunas lado a lado não cabem numa tela de celular.
+    // A partir do lg, volta a ser o board tradicional com todas as colunas
+    // visíveis e altura travada na tela.
+    <div className="flex h-[calc(100dvh-230px)] snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:h-full lg:min-h-0 lg:snap-none">
       {COLUMNS.map(({ key, title, color }) => (
         <KanbanColumn
           key={key}
