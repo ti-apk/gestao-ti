@@ -4,8 +4,8 @@ import {
   getTicketsEvolution,
   getFinalizedDensityCalendar,
   getFinalizedDensityAggregate,
-  getDemandByArea,
-  getEfficiencyByPriority,
+  getCompletedByWeek,
+  getCompletedByResponsibleThisWeek,
   getTasksByResponsible,
   getSlaTargets,
   filterTickets,
@@ -40,11 +40,11 @@ export function getDashboardData(allTickets, filters) {
       : { mode: 'calendar', weeks: getFinalizedDensityCalendar(tickets) }
 
   return {
-    kpis: getKpiSummary(tickets, slaTargets),
+    kpis: getKpiSummary(tickets, slaTargets, filters),
     evolution: getTicketsEvolution(tickets, filters),
     density,
-    demand: getDemandByArea(tickets),
-    efficiency: getEfficiencyByPriority(tickets),
+    completedByWeek: getCompletedByWeek(statusTickets),
+    completedByResponsible: getCompletedByResponsibleThisWeek(statusTickets),
     tasksByResponsible: getTasksByResponsible(statusTickets),
     slaTargets,
   }

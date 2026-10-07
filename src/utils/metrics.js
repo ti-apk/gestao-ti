@@ -10,7 +10,7 @@ import {
   bucketSortKeyFor,
   weekRangeLabel,
 } from './dateHelpers'
-import { isWithinInterval, isSameDay, startOfDay, startOfWeek, subDays, addDays } from 'date-fns'
+import { isWithinInterval, isSameDay, startOfDay, startOfWeek, subDays, subWeeks, addDays } from 'date-fns'
 
 // -----------------------------------------------------------------------------
 // META DE SLA — calculada a partir do histórico real do time, não de um prazo
@@ -77,14 +77,17 @@ export function filterTickets(tickets, filters) {
 
 // -----------------------------------------------------------------------------
 // 1. KPI CARDS (Total de Tickets, Lead Time Médio, Taxa de SLA, Urgente(s),
-//    Tempo Médio, Fora do prazo)
+//    Média por semana, Fora do prazo)
 // -----------------------------------------------------------------------------
-export function getKpiSummary(tickets, slaTargets) {
+// IMPORTANTE: `filters` é usado só pra saber o tamanho (em semanas) do período
+// selecionado — pra calcular "Média por semana". Os próprios `tickets` já
+// chegam filtrados por período (feito em getDashboardData antes de chamar isso).
+export function getKpiSummary(tickets, slaTargets, filters = {}) {
   // Total representa TUDO, independente do status (decisão do time)
   const total = tickets.length
 
-  // Lead Time, Taxa de SLA e Tempo Médio olham só pra quem foi efetivamente
-  // concluído — cancelado não é "resolvido", não deve puxar essas médias
+  // Lead Time e Taxa de SLA olham só pra quem foi efetivamente concluído —
+  // cancelado não é "resolvido", não deve puxar essas médias
   const concluded = tickets.filter((t) => t.status === 'concluido')
 
   const avgLeadTimeDays =
@@ -102,12 +105,25 @@ export function getKpiSummary(tickets, slaTargets) {
     (t) => t.priority === 'urgente' && t.status !== 'concluido' && t.status !== 'cancelado'
   ).length
 
-  const avgMinutes =
-    concluded.length === 0
-      ? 0
-      : concluded.reduce((sum, t) => sum + hoursBetween(t.createdAt, t.closedAt) * 60, 0) / concluded.length
-  const avgHours = Math.floor(avgMinutes / 60)
-  const avgRemainingMinutes = Math.round(avgMinutes % 60)
+  // Média por semana: volume de chamados ABERTOS (qualquer status) dividido
+  // pelo número de semanas do período selecionado — não é mais uma métrica de
+  // tempo, e sim de volume de demanda.
+  const { start, end } = getPeriodRange(filters)
+  let rangeStart = start
+  const rangeEnd = end || new Date()
+  if (!rangeStart) {
+    // Período "Todos" (ou sem filtro de data): usa o intervalo real coberto
+    // pelos próprios tickets, já que não há um início fixo de período
+    if (tickets.length > 0) {
+      const createdTimes = tickets.map((t) => new Date(t.createdAt).getTime())
+      rangeStart = new Date(Math.min(...createdTimes))
+    } else {
+      rangeStart = rangeEnd
+    }
+  }
+  const spanDays = Math.max(1, daysBetween(rangeStart, rangeEnd))
+  const weeksSpan = Math.max(1, spanDays / 7)
+  const avgPerWeek = total / weeksSpan
 
   // Fora do prazo: qualquer ticket (aberto ou concluído) que passou da meta —
   // exceto bloqueado/cancelado, já filtrados dentro de isOverdue()
@@ -118,7 +134,7 @@ export function getKpiSummary(tickets, slaTargets) {
     avgLeadTimeDays: avgLeadTimeDays.toFixed(0),
     slaRate: slaRate.toFixed(1).replace('.', ','),
     urgentCount,
-    avgTime: `${avgHours}h ${avgRemainingMinutes}m`,
+    avgPerWeek: avgPerWeek.toFixed(1).replace('.', ','),
     overdueCount,
   }
 }
@@ -236,51 +252,124 @@ export function getFinalizedDensityAggregate(tickets) {
 }
 
 // -----------------------------------------------------------------------------
-// 4. ÁREAS COM MAIOR DEMANDA (Top 5 categorias + "Outros" agrupando o restante)
+// 4. CONCLUÍDOS POR SEMANA (últimas 5 semanas de calendário, Dom-Sáb, com
+//    comparação semana a semana) — substitui o antigo "Áreas com maior demanda"
 // -----------------------------------------------------------------------------
-export function getDemandByArea(tickets) {
-  const counts = {}
-  tickets
-    .filter((t) => t.status !== 'cancelado' && t.category)
-    .forEach((t) => {
-      counts[t.category] = (counts[t.category] || 0) + 1
-    })
+// Sempre olha pra janela fixa das últimas 5 semanas (independente do filtro de
+// Período da tela) — por isso recebe tickets já filtrados só por
+// Responsável/Categoria (ignorando Período), o mesmo recorte usado em
+// "Tarefas por Responsável".
+export function getCompletedByWeek(tickets) {
+  const today = startOfDay(new Date())
+  const currentWeekStart = startOfWeek(today, { weekStartsOn: 0 })
 
-  const sorted = Object.entries(counts)
-    .map(([category, count]) => ({ category, count }))
-    .sort((a, b) => b.count - a.count)
+  const weeks = Array.from({ length: 5 }, (_, i) => {
+    const weekStart = subWeeks(currentWeekStart, 4 - i)
+    const weekEnd = addDays(weekStart, 6)
+    return { weekStart, weekEnd, isCurrent: i === 4 }
+  })
 
-  const top5 = sorted.slice(0, 5)
-  const rest = sorted.slice(5)
-  const outrosCount = rest.reduce((sum, c) => sum + c.count, 0)
+  const rows = weeks.map(({ weekStart, weekEnd, isCurrent }) => {
+    const count = tickets.filter(
+      (t) =>
+        t.status === 'concluido' &&
+        t.closedAt &&
+        new Date(t.closedAt) >= weekStart &&
+        new Date(t.closedAt) <= weekEnd
+    ).length
 
-  return outrosCount > 0 ? [...top5, { category: 'Outros', count: outrosCount }] : top5
+    // "Criados" na mesma janela -> usado só pra estimar a taxa de conclusão
+    const criadosSemana = tickets.filter(
+      (t) => new Date(t.createdAt) >= weekStart && new Date(t.createdAt) <= weekEnd
+    ).length
+
+    const { dayRange, monthRange } = weekRangeLabel(weekStart, weekEnd)
+    return { dayRange, monthRange, count, criadosSemana, isCurrent }
+  })
+
+  const maxCount = Math.max(1, ...rows.map((r) => r.count))
+
+  const withChange = rows.map((row, i) => {
+    let change = null
+    if (row.isCurrent) {
+      // Semana em andamento: ainda não dá pra comparar de forma justa
+      // (ela não terminou), então sinalizamos como "parcial" em vez de %
+      change = 'parcial'
+    } else {
+      const prev = rows[i - 1]
+      // Sem semana anterior (primeira da lista) ou semana anterior zerada
+      // (percentual não faz sentido matematicamente) -> "—"
+      if (prev && prev.count > 0) {
+        change = ((row.count - prev.count) / prev.count) * 100
+      }
+    }
+    return { ...row, barPercent: Math.round((row.count / maxCount) * 100), change }
+  })
+
+  const completedWeeks = rows.filter((r) => !r.isCurrent)
+  const totalConcluidos = rows.reduce((sum, r) => sum + r.count, 0)
+  const mediaPorSemana = completedWeeks.length
+    ? Math.round(completedWeeks.reduce((sum, r) => sum + r.count, 0) / completedWeeks.length)
+    : 0
+
+  const totalCriados = rows.reduce((sum, r) => sum + r.criadosSemana, 0)
+  const taxaConclusao = totalCriados === 0 ? 0 : (totalConcluidos / totalCriados) * 100
+
+  return {
+    rows: withChange,
+    totalConcluidos,
+    mediaPorSemana,
+    taxaConclusao: Number(taxaConclusao.toFixed(0)),
+  }
 }
 
 // -----------------------------------------------------------------------------
-// 5. EFICIÊNCIA POR PRIORIDADE (tempo de ciclo médio por prioridade)
+// 5. CONCLUÍDOS POR RESPONSÁVEL — nesta semana (substitui a antiga
+//    "Eficiência por Prioridade")
 // -----------------------------------------------------------------------------
-const PRIORITY_ORDER = ['urgente', 'alta', 'normal', 'baixa']
-const PRIORITY_LABEL = { urgente: 'Urgente', alta: 'Alta', normal: 'Normal', baixa: 'Baixa' }
+// Só conta status `concluido` — cancelado nunca entra aqui. Também ignora o
+// filtro de Período (é sempre "esta semana"), mas respeita Responsável/Categoria.
+// Ticket com mais de um responsável conta para TODOS eles.
+// Retorna { byResponsible, totalConcluidos }:
+// - byResponsible: contagem por pessoa (ticket com múltiplos responsáveis
+//   conta uma vez PRA CADA um deles — por isso a soma das fatias pode ser
+//   maior que totalConcluidos)
+// - totalConcluidos: quantidade real de tickets distintos concluídos na
+//   semana (sem duplicar os de múltiplos responsáveis) — é o número exibido
+//   no centro da rosca, pra bater com o card "Chamados concluídos por semana"
+export function getCompletedByResponsibleThisWeek(tickets) {
+  const today = startOfDay(new Date())
+  const weekStart = startOfWeek(today, { weekStartsOn: 0 })
+  const weekEnd = addDays(weekStart, 6)
 
-export function getEfficiencyByPriority(tickets) {
-  const concluded = tickets.filter((t) => t.status === 'concluido')
+  const completedTickets = tickets.filter(
+    (t) =>
+      t.status === 'concluido' &&
+      t.closedAt &&
+      new Date(t.closedAt) >= weekStart &&
+      new Date(t.closedAt) <= weekEnd
+  )
 
-  const groups = PRIORITY_ORDER.map((priority) => {
-    const items = concluded.filter((t) => t.priority === priority)
-    if (items.length === 0) return null
+  const byAssignee = {}
 
-    const avgCycleTimeDays = items.reduce((sum, t) => sum + t.cycleTimeHours, 0) / items.length / 24
+  completedTickets.forEach((t) => {
+    const people = t.assignees?.length
+      ? t.assignees
+      : [{ name: t.assignee, photo: t.assigneePhoto, initials: t.assigneeInitials }]
 
-    return {
-      priority,
-      label: PRIORITY_LABEL[priority],
-      count: items.length,
-      avgCycleTimeDays: Number(avgCycleTimeDays.toFixed(1)),
-    }
+    people.forEach((person) => {
+      if (!person?.name) return
+      if (!byAssignee[person.name]) {
+        byAssignee[person.name] = { name: person.name, count: 0 }
+      }
+      byAssignee[person.name].count++
+    })
   })
 
-  return groups.filter(Boolean)
+  return {
+    byResponsible: Object.values(byAssignee).sort((a, b) => b.count - a.count),
+    totalConcluidos: completedTickets.length,
+  }
 }
 
 // -----------------------------------------------------------------------------

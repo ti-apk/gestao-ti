@@ -13,6 +13,24 @@
   }
 }
 
+/* Variáveis usadas pelo tooltip de hover dos gráficos Recharts — o
+   `contentStyle`/`itemStyle` deles só aceita CSS inline, então não dá pra
+   usar classes `dark:` ali. Referenciando estas variáveis, o tooltip
+   acompanha o tema sem precisar de lógica extra em JS. */
+:root {
+  --tooltip-bg: #FFFFFF;
+  --tooltip-text: #1A1A1A;
+  --tooltip-label: #6B7280;
+  --tooltip-border: #E9E6DD;
+}
+
+.dark {
+  --tooltip-bg: #242529;
+  --tooltip-text: #F2F2F2;
+  --tooltip-label: #9CA3AF;
+  --tooltip-border: #33343A;
+}
+
 @layer components {
 
   /* Classe reutilizada em todos os 6 KPI cards e nos painéis de gráfico */
@@ -31,18 +49,33 @@
   }
 }
 
-.dark ::-webkit-scrollbar {
+/* Regras base (light mode) — sem elas, navegadores mais antigos preenchem o
+   track do scrollbar com o cinza padrão do sistema em vez de ficar transparente */
+::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-.dark ::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: transparent;
 }
 
+::-webkit-scrollbar-thumb {
+  background-color: #D6D3C9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #C5C1B4;
+}
+
+:root {
+  scrollbar-color: #D6D3C9 transparent;
+}
+
+/* Dark mode sobrescreve só a cor do polegar — o track continua transparente */
 .dark ::-webkit-scrollbar-thumb {
   background-color: #4b4c52;
-  border-radius: 9999px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
@@ -51,4 +84,14 @@
 
 .dark {
   scrollbar-color: #4b4c52 transparent;
+}
+
+/* Scroll mais fino, usado nas colunas do Kanban (aba Tickets) e nas colunas
+   por pessoa (aba Em Execução) — o resto do painel continua com os 6px padrão */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
 }

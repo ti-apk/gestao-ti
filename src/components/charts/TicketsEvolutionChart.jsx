@@ -60,7 +60,17 @@ export function TicketsEvolutionChart({ data }) {
             tick={hasTwoLineLabels ? <EvolutionTick data={data} /> : { fontSize: 11 }}
           />
           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={32} />
-          <Tooltip contentStyle={{ borderRadius: 12, border: 'none', fontSize: 12 }} />
+          <Tooltip
+            contentStyle={{
+              borderRadius: 12,
+              border: '1px solid var(--tooltip-border)',
+              fontSize: 12,
+              backgroundColor: 'var(--tooltip-bg)',
+              color: 'var(--tooltip-text)',
+            }}
+            labelStyle={{ color: 'var(--tooltip-text)', fontWeight: 600 }}
+            itemStyle={{ color: 'var(--tooltip-text)' }}
+          />
           <Legend
             verticalAlign="top"
             align="right"

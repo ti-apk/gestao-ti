@@ -27,7 +27,7 @@ export function PersonColumn({ person, tickets, color }) {
                 </span>
             </div>
 
-            <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2.5">
+            <div className="thin-scrollbar flex flex-1 flex-col gap-2 overflow-y-auto p-2.5">
                 {tickets.map((t) => (
                     <TicketCard key={t.id} ticket={t} />
                 ))}

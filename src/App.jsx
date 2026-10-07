@@ -4,7 +4,7 @@ import {
   Clock,
   ShieldCheck,
   AlertTriangle,
-  Target,
+  TrendingUp,
   TimerOff,
 } from "lucide-react";
 
@@ -13,8 +13,8 @@ import { Layout } from "./components/layout/Layout";
 import { KpiCard } from "./components/cards/KpiCard";
 import { TicketsEvolutionChart } from "./components/charts/TicketsEvolutionChart";
 import { OpeningDensityHeatmap } from "./components/charts/OpeningDensityHeatmap";
-import { DemandByAreaChart } from "./components/charts/DemandByAreaChart";
-import { EfficiencyByPriorityTable } from "./components/charts/EfficiencyByPriorityTable";
+import { CompletedByWeekChart } from "./components/charts/CompletedByWeekChart";
+import { CompletedByResponsibleChart } from "./components/charts/CompletedByResponsibleChart";
 import { TasksByResponsibleChart } from "./components/charts/TasksByResponsibleChart";
 import { KanbanBoard } from "./components/tickets/KanbanBoard";
 import { ExecutionGrid } from "./components/tickets/ExecutionGrid";
@@ -162,8 +162,14 @@ export default function App() {
     );
   }
 
-  const { kpis, evolution, density, demand, efficiency, tasksByResponsible } =
-    data;
+  const {
+    kpis,
+    evolution,
+    density,
+    completedByWeek,
+    completedByResponsible,
+    tasksByResponsible,
+  } = data;
 
   return (
     <Layout {...layoutProps}>
@@ -198,10 +204,10 @@ export default function App() {
           color="red"
         />
         <KpiCard
-          icon={Target}
-          label="Tempo Médio"
-          value={kpis.avgTime}
-          sublabel="média por ticket"
+          icon={TrendingUp}
+          label="Média por semana"
+          value={kpis.avgPerWeek}
+          sublabel="chamados abertos/semana"
           color="gray"
         />
         <KpiCard
@@ -219,10 +225,10 @@ export default function App() {
         <OpeningDensityHeatmap density={density} />
       </div>
 
-      {/* Linha 3 — Demanda + Eficiência + Tarefas por Responsável */}
+      {/* Linha 3 — Concluídos por semana + Concluídos por responsável + Tarefas por Responsável */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
-        <DemandByAreaChart data={demand} />
-        <EfficiencyByPriorityTable data={efficiency} />
+        <CompletedByWeekChart data={completedByWeek} />
+        <CompletedByResponsibleChart data={completedByResponsible} />
         <TasksByResponsibleChart data={tasksByResponsible} />
       </div>
     </Layout>
