@@ -389,7 +389,13 @@ export function getTasksByResponsible(tickets) {
   const byAssignee = {}
 
   tickets
-    .filter((t) => t.displayStatus && t.displayStatus !== 'cancelado' && t.displayStatus !== 'concluido')
+    .filter(
+      (t) =>
+        t.displayStatus &&
+        t.displayStatus !== 'cancelado' &&
+        t.displayStatus !== 'concluido' &&
+        t.displayStatus !== 'fila' // Fila não tem responsável: fica só no Kanban
+    )
     .forEach((t) => {
       const people = t.assignees?.length ? t.assignees : [{ name: t.assignee, photo: t.assigneePhoto, initials: t.assigneeInitials }]
 

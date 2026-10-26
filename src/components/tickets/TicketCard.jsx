@@ -1,8 +1,10 @@
 import { PriorityFlag } from '../ui/PriorityFlag'
 import { TagChip } from '../ui/TagChip'
+import { UNASSIGNED_NAME } from '../../services/clickupClient'
 
 function firstName(fullName) {
   if (!fullName) return fullName
+  if (fullName === UNASSIGNED_NAME) return fullName
   return fullName.trim().split(/\s+/)[0]
 }
 

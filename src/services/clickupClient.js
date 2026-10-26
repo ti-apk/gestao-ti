@@ -68,7 +68,11 @@ function normalize(str) {
 // Mais granular que antes: "bloqueado" (aguardando) e "cancelado" agora são
 // distintos de "em_andamento" e "concluido", porque os indicadores precisam
 // tratá-los de forma diferente (ver metrics.js).
+// Nome exibido para tickets sem responsável (ex.: status Fila)
+export const UNASSIGNED_NAME = 'Aguardando responsável'
+
 const STATUS_MAP = {
+  fila: 'pendente', // na fila = pronto pra ser tratado (mesma lógica de SLA do Pendente)
   backlog: 'backlog',
   pendente: 'pendente',
   'em execucao': 'em_andamento',
@@ -92,6 +96,7 @@ function mapStatus(status) {
 // "Aguardando Externo" continuam separados, porque a lógica de SLA/Fora do
 // Prazo (que usa STATUS_MAP/"bloqueado") não deve mudar por causa disso.
 const DISPLAY_STATUS_MAP = {
+  fila: 'fila',
   backlog: 'backlog',
   pendente: 'pendente',
   'em execucao': 'em_andamento',
@@ -154,11 +159,11 @@ export function mapClickUpTaskToTicket(task) {
   // responsáveis). Cada item carrega nome, foto e iniciais próprios.
   const rawAssignees = task.assignees?.length ? task.assignees : [null]
   const assignees = rawAssignees.map((a) => {
-    const name = a?.username || a?.email || 'Não atribuído'
+    const name = a?.username || a?.email || UNASSIGNED_NAME
     return {
       name,
       photo: a?.profilePicture || null,
-      initials: a?.initials || name.slice(0, 2).toUpperCase(),
+      initials: a ? a.initials || name.slice(0, 2).toUpperCase() : '?',
     }
   })
 

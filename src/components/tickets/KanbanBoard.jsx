@@ -1,7 +1,7 @@
 import { KanbanColumn } from "./KanbanColumn";
 
 const COLUMNS = [
-  { key: "em_andamento", title: "Em Execução", color: "#008af2" },
+  { key: "fila", title: "Fila", color: "#85d9cf" },
   { key: "pendente", title: "Pendente", color: "#da4449" },
   { key: "aguardando_interno", title: "Aguardando Interno", color: "#f2bb3a" },
   { key: "aguardando_externo", title: "Aguardando Externo", color: "#eb6308" },

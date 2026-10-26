@@ -1,3 +1,5 @@
+import { UNASSIGNED_NAME } from "../../services/clickupClient";
+
 // Mesmas cores usadas no ClickUp para cada status
 const STATUS_SEGMENTS = [
   { key: "backlog", label: "Backlog", color: "#f26aae" },
@@ -9,6 +11,7 @@ const STATUS_SEGMENTS = [
 
 function firstName(fullName) {
   if (!fullName) return fullName;
+  if (fullName === UNASSIGNED_NAME) return fullName;
   return fullName.trim().split(/\s+/)[0];
 }
 
