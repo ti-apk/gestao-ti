@@ -44,7 +44,7 @@ export function CompletedByWeekChart({ data }) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col justify-start gap-0">
+      <div className="flex min-h-0 flex-1 flex-col justify-evenly">
         {rows.map((row) => {
           const barWidth = Math.max(row.count > 0 ? 4 : 0, row.barPercent)
           // A listra da semana em andamento é feita via inline style (não como
