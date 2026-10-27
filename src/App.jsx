@@ -45,7 +45,10 @@ export default function App() {
 
   const refreshTickets = () => {
     getTickets()
-      .then(setAllTickets)
+      .then((tickets) => {
+        setAllTickets(tickets);
+        setError(null);
+      })
       .catch((err) => setError(err.message));
   };
 
@@ -126,7 +129,9 @@ export default function App() {
     secondsLeft,
   };
 
-  if (error) {
+  // Só troca a tela por erro se ainda não há dados: numa atualização
+  // automática que falhar, o painel continua mostrando os últimos dados bons.
+  if (error && !allTickets) {
     return (
       <Layout {...layoutProps}>
         <p className="text-sm text-brand-red">

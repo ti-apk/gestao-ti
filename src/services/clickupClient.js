@@ -23,6 +23,27 @@ const client = axios.create({
   headers: { Authorization: TOKEN },
 })
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// GET com retentativa: falhas intermitentes do ClickUp (sem resposta, 5xx,
+// 429 de rate limit ou OAUTH_017 "Authorization header required", que às vezes
+// vem em respostas de borda mesmo com o token configurado) costumam passar na
+// segunda ou terceira tentativa. Erros "de verdade" (token inválido, lista
+// inexistente) não são retentados.
+async function getWithRetry(url, config, attempts = 3) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await client.get(url, config)
+    } catch (err) {
+      const status = err.response?.status
+      const ecode = err.response?.data?.ECODE
+      const retryable = !err.response || status >= 500 || status === 429 || ecode === 'OAUTH_017'
+      if (!retryable || i === attempts - 1) throw err
+      await sleep(800 * 2 ** i + Math.random() * 400)
+    }
+  }
+}
+
 // Busca TODAS as tasks da lista, paginando automaticamente (ClickUp devolve no máx. 100 por página)
 export async function fetchClickUpTasks() {
   if (!TOKEN || !LIST_ID) {
@@ -34,7 +55,7 @@ export async function fetchClickUpTasks() {
   const allTasks = []
 
   while (!lastPage) {
-    const { data } = await client.get(`/list/${LIST_ID}/task`, {
+    const { data } = await getWithRetry(`/list/${LIST_ID}/task`, {
       params: {
         page,
         archived: false,
